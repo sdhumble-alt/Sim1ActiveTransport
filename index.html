@@ -25,8 +25,13 @@
         .btn {
             transition: all 0.2s ease-in-out;
         }
-        .btn:active {
+        .btn:active:not(:disabled) {
             transform: scale(0.95);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
         .fade-in {
             animation: fadeIn 0.3s ease-in;
@@ -35,49 +40,35 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
-        /* Custom scrollbar for text panel */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="h-screen flex flex-col text-slate-800">
 
-    <header class="bg-blue-600 text-white p-4 shadow-md z-10">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
+    <header class="bg-blue-600 text-white p-4 shadow-md z-10 shrink-0">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <h1 class="text-2xl font-bold tracking-tight">Cellular Transport Simulator</h1>
             <nav class="flex space-x-2">
-                <button onclick="setModule('pump')" id="tab-pump" class="btn px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded-md font-semibold text-sm transition-colors ring-2 ring-transparent ring-offset-2 ring-offset-blue-600">Na+/K+ Pump</button>
+                <button onclick="setModule('pump')" id="tab-pump" class="btn px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded-md font-semibold text-sm transition-colors ring-2 ring-white ring-offset-2 ring-offset-blue-600">Na+/K+ Pump</button>
                 <button onclick="setModule('endo')" id="tab-endo" class="btn px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded-md font-semibold text-sm transition-colors ring-2 ring-transparent ring-offset-2 ring-offset-blue-600">Endocytosis</button>
                 <button onclick="setModule('exo')" id="tab-exo" class="btn px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded-md font-semibold text-sm transition-colors ring-2 ring-transparent ring-offset-2 ring-offset-blue-600">Exocytosis</button>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col md:flex-row max-w-6xl mx-auto w-full p-4 gap-4">
+    <main class="flex-grow flex flex-col md:flex-row max-w-6xl mx-auto w-full p-4 gap-4 overflow-hidden">
         
         <!-- Left Side: Canvas Area -->
         <div class="flex-grow bg-white rounded-xl shadow-lg border border-slate-200 flex flex-col relative overflow-hidden min-h-[400px]">
             <div class="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-2 rounded shadow-sm border border-slate-200 z-10 pointer-events-none">
                 <h2 id="canvas-title" class="font-bold text-lg text-slate-700 mb-1">Sodium-Potassium Pump</h2>
-                <div id="legend" class="text-xs text-slate-600 space-y-1">
-                    <!-- Legend populated by JS -->
-                </div>
+                <div id="legend" class="text-xs text-slate-600 space-y-1"></div>
             </div>
 
-            <!-- Scoreboard (Pump only) -->
+            <!-- Scoreboard -->
             <div id="pump-scoreboard" class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded shadow-sm border border-slate-200 z-10 pointer-events-none">
                 <h3 class="font-bold text-sm text-slate-700 mb-1 border-b pb-1">Transport Stats</h3>
                 <div class="text-xs text-slate-600 space-y-1 mt-2">
@@ -87,72 +78,69 @@
                 </div>
             </div>
             
-            <!-- Canvas Container -->
             <div class="flex-grow relative w-full h-full p-2" id="canvas-container">
                 <canvas id="sim-canvas"></canvas>
             </div>
         </div>
 
         <!-- Right Side: Info & Controls Panel -->
-        <div class="w-full md:w-80 flex flex-col gap-4">
+        <div class="w-full md:w-80 flex flex-col gap-4 overflow-y-auto">
             
-            <!-- Controls Section -->
             <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 shrink-0">
                 <h3 class="text-sm uppercase tracking-wider font-bold text-slate-400 mb-4">Simulation Controls</h3>
                 
-                <div id="controls-pump" class="flex flex-col gap-3">
-                    <button id="btn-bind-atp" onclick="triggerAction('bindATP')" class="btn w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg shadow-sm">1. Bind ATP</button>
-                    <button id="btn-pump-ions" onclick="triggerAction('pumpIons')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>2. Pump Ions</button>
-                    <button id="btn-run-again" onclick="triggerAction('runAgain')" class="btn w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm hidden">Run Again</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-sm">Reset</button>
+                <!-- Pump Controls (5 Steps + Auto) -->
+                <div id="controls-pump" class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between mb-2 bg-slate-50 p-2 rounded border border-slate-100">
+                        <span class="text-sm font-bold text-slate-700">Auto Mode Loop</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" id="auto-toggle" class="sr-only peer" onchange="toggleAutoMode(this.checked)">
+                          <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <button id="btn-step1" onclick="triggerPumpStep(1)" class="btn w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded shadow-sm text-sm">1. Bind Na+</button>
+                    <button id="btn-step2" onclick="triggerPumpStep(2)" class="btn w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded shadow-sm text-sm" disabled>2. Bind ATP</button>
+                    <button id="btn-step3" onclick="triggerPumpStep(3)" class="btn w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm text-sm" disabled>3. Release Na+</button>
+                    <button id="btn-step4" onclick="triggerPumpStep(4)" class="btn w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded shadow-sm text-sm" disabled>4. Bind K+</button>
+                    <button id="btn-step5" onclick="triggerPumpStep(5)" class="btn w-full py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded shadow-sm text-sm" disabled>5. Release K+</button>
+                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
                 </div>
 
+                <!-- Endo Controls -->
                 <div id="controls-endo" class="flex flex-col gap-3 hidden">
-                    <button id="btn-engulf" onclick="triggerAction('engulf')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-sm">Engulf Particle</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-sm">Reset</button>
+                    <button id="btn-engulf" onclick="triggerAction('engulf')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm">Engulf Particle</button>
+                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
                 </div>
 
+                <!-- Exo Controls -->
                 <div id="controls-exo" class="flex flex-col gap-3 hidden">
-                    <button id="btn-release" onclick="triggerAction('release')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-sm">Release Contents</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-sm">Reset</button>
+                    <button id="btn-release" onclick="triggerAction('release')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm">Release Contents</button>
+                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
                 </div>
             </div>
 
-            <!-- Educational Text Section -->
-            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex-grow overflow-y-auto max-h-[40vh] md:max-h-none">
+            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex-grow shrink-0">
                 <h3 class="text-sm uppercase tracking-wider font-bold text-slate-400 mb-2">Mechanism</h3>
-                <div id="info-text" class="text-slate-600 text-sm leading-relaxed space-y-3">
-                    <!-- Text populated by JS -->
-                </div>
+                <div id="info-text" class="text-slate-600 text-sm leading-relaxed space-y-3"></div>
             </div>
-
         </div>
     </main>
 
     <script>
-        // --- Core Variables & Setup ---
         const canvas = document.getElementById('sim-canvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
         
-        let currentModule = 'pump'; // 'pump', 'endo', 'exo'
+        let currentModule = 'pump';
         let width, height, cx, cy;
         let animationId;
         let lastTime = 0;
         let pumpStats = { na: 0, k: 0, atp: 0 };
 
-        // Colors
         const COLORS = {
-            ecf: '#dbeafe', // Extracellular Fluid (Light Blue)
-            icf: '#fef9c3', // Intracellular Fluid (Light Yellow)
-            membrane: '#94a3b8',
-            head: '#475569',
-            pump: '#8b5cf6', // Purple
-            na: '#ef4444', // Red
-            k: '#3b82f6', // Blue
-            atp: '#eab308', // Yellow
-            particle: '#22c55e', // Green
-            exoParticle: '#d946ef' // Fuchsia
+            ecf: '#dbeafe', icf: '#fef9c3', membrane: '#94a3b8', head: '#475569',
+            pump: '#8b5cf6', na: '#ef4444', k: '#3b82f6', atp: '#eab308',
+            particle: '#22c55e', exoParticle: '#d946ef'
         };
 
         const CONTENT = {
@@ -161,11 +149,10 @@
                 legend: `
                     <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.na}]"></div> Na+ (Sodium)</div>
                     <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.k}]"></div> K+ (Potassium)</div>
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-[${COLORS.atp}] rotate-45 transform"></div> ATP</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-[${COLORS.atp}] rotate-45 transform"></div> ATP / P</div>
                 `,
                 text: `
                     <p><strong>Primary Active Transport</strong> moves ions across a cell membrane against their concentration gradient, requiring energy (ATP).</p>
-                    <p>The Sodium-Potassium (Na+/K+) pump maintains electrochemical gradients essential for nerve impulses and muscle contractions.</p>
                     <ol class="list-decimal pl-4 space-y-1 mt-2">
                         <li>Three <strong>Na+</strong> ions from inside the cell bind to the pump.</li>
                         <li><strong>ATP</strong> binds, transferring a phosphate group (phosphorylation) and energy to the pump.</li>
@@ -177,64 +164,30 @@
             },
             endo: {
                 title: "Endocytosis",
-                legend: `
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm bg-[${COLORS.particle}]"></div> Extracellular Particle (e.g., food, pathogen)</div>
-                `,
-                text: `
-                    <p><strong>Endocytosis</strong> is a form of bulk active transport where a cell takes in macromolecules or large particles by engulfing them in an invagination of its membrane.</p>
-                    <p>There are several types, including phagocytosis ("cellular eating") and pinocytosis ("cellular drinking").</p>
-                    <ul class="list-disc pl-4 space-y-1 mt-2">
-                        <li>The cell membrane folds inward (invaginates) around the target particle.</li>
-                        <li>The pocket deepens and eventually pinches off from the membrane.</li>
-                        <li>This forms a membrane-bound <strong>vesicle</strong> containing the particle inside the cell (intracellular space).</li>
-                    </ul>
-                `
+                legend: `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm bg-[${COLORS.particle}]"></div> Extracellular Particle</div>`,
+                text: `<p><strong>Endocytosis</strong> is bulk active transport where a cell takes in large particles by engulfing them in an invagination of its membrane, forming a vesicle.</p>`
             },
             exo: {
                 title: "Exocytosis",
-                legend: `
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.exoParticle}]"></div> Secretory Product (e.g., hormones, neurotransmitters)</div>
-                `,
-                text: `
-                    <p><strong>Exocytosis</strong> is the reverse of endocytosis. It's the bulk transport process cells use to expel materials, such as waste products, hormones, or neurotransmitters, into the extracellular fluid.</p>
-                    <ul class="list-disc pl-4 space-y-1 mt-2">
-                        <li>Materials to be secreted are packaged into a <strong>vesicle</strong> inside the cell (often by the Golgi apparatus).</li>
-                        <li>The vesicle moves to the plasma membrane.</li>
-                        <li>The vesicle membrane and the plasma membrane fuse together.</li>
-                        <li>The contents of the vesicle are spilled out into the extracellular space, and the vesicle membrane becomes part of the plasma membrane.</li>
-                    </ul>
-                `
+                legend: `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.exoParticle}]"></div> Secretory Product</div>`,
+                text: `<p><strong>Exocytosis</strong> is the reverse of endocytosis. Materials packaged in a vesicle fuse with the plasma membrane to expel contents outside the cell.</p>`
             }
         };
 
-        // --- Resize & Setup Canvas ---
         function resizeCanvas() {
-            // Get actual dimensions from CSS
             const rect = container.getBoundingClientRect();
-            // Handle high DPI displays for crisp rendering
             const dpr = window.devicePixelRatio || 1;
-            
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
-            
             ctx.scale(dpr, dpr);
-            width = rect.width;
-            height = rect.height;
-            cx = width / 2;
-            cy = height / 2;
-
-            // Update background gradient in canvas
+            width = rect.width; height = rect.height;
+            cx = width / 2; cy = height / 2;
             canvas.style.background = `linear-gradient(to bottom, ${COLORS.ecf} 0%, ${COLORS.ecf} ${cy}px, ${COLORS.icf} ${cy}px, ${COLORS.icf} 100%)`;
-
-            // Reset module state on resize to fix positions
             initModuleState();
         }
-
         window.addEventListener('resize', resizeCanvas);
 
-        // --- State Objects for Simulations ---
-        
-        let simState = {}; // Holds dynamic variables for current simulation
+        let simState = {}; 
 
         function updateStatsUI() {
             document.getElementById('stat-na').innerText = pumpStats.na;
@@ -245,757 +198,442 @@
         function initModuleState() {
             simState = {
                 time: 0,
-                membraneY: cy,
-                particles: [], // Generic particles
-                
-                // Pump specific
-                pumpState: 0, // 0:Idle, 1:ATP Binding, 2:Na Release, 3:K Bound, 4:K Release
-                pumpAnimProgress: 0,
-                atpBindDelay: 0,
-                atp: { x: cx - 100, y: height - 50, bound: false, split: false, active: false },
                 ions: [],
+                // Pump state machine: 0(idle), 1(bindNa), 1.5(wait), 2(bindATP), 2.5(wait), 3(releaseNa), 3.5(wait), 4(bindK), 4.5(wait), 5(releaseK)
+                pumpState: 0, 
+                pumpAnimProgress: 0, // 0 = open inside, 1 = open outside
+                waitTimer: 0,
+                autoMode: document.getElementById('auto-toggle') ? document.getElementById('auto-toggle').checked : false,
+                atp: { active: false, x: 0, y: 0, isAdp: false },
+                pi: { active: false, attached: false, x: 0, y: 0, vx: 0, vy: 0 },
                 
                 // Endo/Exo specific
-                animProgress: 0, // 0 to 1
+                animProgress: 0,
                 isAnimating: false
             };
 
             if (currentModule === 'pump') {
                 pumpStats = { na: 0, k: 0, atp: 0 };
                 updateStatsUI();
-
-                // Background scattered ions to show gradients
-                for(let i=0; i<15; i++) {
-                    // Lots of Na outside
-                    simState.ions.push({ type: 'Na', x: Math.random()*width, y: Math.random()*(cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*0.5, vx: (Math.random()-0.5)*0.5 });
-                    // Lots of K inside
-                    simState.ions.push({ type: 'K', x: Math.random()*width, y: cy+60 + Math.random()*(height-cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*0.5, vx: (Math.random()-0.5)*0.5 });
-                }
-                // Few Na inside, Few K outside
-                for(let i=0; i<3; i++) {
-                    simState.ions.push({ type: 'Na', x: Math.random()*width, y: cy+60 + Math.random()*(height-cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*0.5, vx: (Math.random()-0.5)*0.5 });
-                    simState.ions.push({ type: 'K', x: Math.random()*width, y: Math.random()*(cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*0.5, vx: (Math.random()-0.5)*0.5 });
-                }
-
-                // 3 Na waiting to bind inside
-                simState.ions.push({ type: 'Na', id: 'na1', x: cx - 20, y: cy + 30, targetX: cx - 20, targetY: cy + 5, fixed: true, r: 8 });
-                simState.ions.push({ type: 'Na', id: 'na2', x: cx, y: cy + 40, targetX: cx, targetY: cy + 15, fixed: true, r: 8 });
-                simState.ions.push({ type: 'Na', id: 'na3', x: cx + 20, y: cy + 30, targetX: cx + 20, targetY: cy + 5, fixed: true, r: 8 });
                 
-                // 2 K waiting far outside
-                simState.ions.push({ type: 'K', id: 'k1', x: cx - 15, y: cy - 100, targetX: cx - 15, targetY: cy - 100, fixed: true, r: 8 });
-                simState.ions.push({ type: 'K', id: 'k2', x: cx + 15, y: cy - 120, targetX: cx + 15, targetY: cy - 120, fixed: true, r: 8 });
+                // Generate ambient ions
+                for(let i=0; i<25; i++) {
+                    simState.ions.push({ type: 'Na', x: Math.random()*width, y: Math.random()*(cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*1, vx: (Math.random()-0.5)*1 });
+                    simState.ions.push({ type: 'K', x: Math.random()*width, y: cy+60 + Math.random()*(height-cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*1, vx: (Math.random()-0.5)*1 });
+                }
+
+                setupNextCycleIons();
             }
             
-            if (currentModule === 'endo') {
-                simState.particle = { x: cx, y: cy - 120, size: 20 };
-            }
-
+            if (currentModule === 'endo') simState.particle = { x: cx, y: cy - 120, size: 20 };
+            
             if (currentModule === 'exo') {
                 simState.vesicleY = cy + 120;
                 simState.exoParticles = [];
                 for(let i=0; i<8; i++) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let r = Math.random() * 15;
-                    simState.exoParticles.push({
-                        xOffset: Math.cos(angle)*r,
-                        yOffset: Math.sin(angle)*r,
-                        globalX: 0, globalY: 0,
-                        released: false,
-                        vx: (Math.random()-0.5)*2,
-                        vy: -1 - Math.random()
-                    });
+                    let angle = Math.random() * Math.PI * 2; let r = Math.random() * 15;
+                    simState.exoParticles.push({ xOffset: Math.cos(angle)*r, yOffset: Math.sin(angle)*r, globalX: 0, globalY: 0, released: false, vx: (Math.random()-0.5)*2, vy: -1 - Math.random() });
                 }
             }
         }
 
-        // --- Drawing Helpers ---
+        // Helper to grab random ambient ions and assign them as actors for the next cycle
+        function setupNextCycleIons() {
+            simState.atp = { active: false, x: cx - 100, y: height - 50, isAdp: false };
+            simState.pi = { active: false, attached: false, x: 0, y: 0, vx: 0, vy: 0 };
+
+            let freeNaInside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'Na' && i.y > cy + 20);
+            while(freeNaInside.length < 3) {
+                let n = { type: 'Na', x: cx + (Math.random()-0.5)*100, y: height - 20, fixed: false, r: 8, vx:(Math.random()-0.5), vy:(Math.random()-0.5) };
+                simState.ions.push(n); freeNaInside.push(n);
+            }
+            freeNaInside[0].id = 'na1'; freeNaInside[0].targetX = cx - 20; freeNaInside[0].targetY = cy + 5; freeNaInside[0].outX = cx - 40; freeNaInside[0].outY = cy - 80;
+            freeNaInside[1].id = 'na2'; freeNaInside[1].targetX = cx; freeNaInside[1].targetY = cy + 15; freeNaInside[1].outX = cx; freeNaInside[1].outY = cy - 100;
+            freeNaInside[2].id = 'na3'; freeNaInside[2].targetX = cx + 20; freeNaInside[2].targetY = cy + 5; freeNaInside[2].outX = cx + 40; freeNaInside[2].outY = cy - 80;
+
+            let freeKOutside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'K' && i.y < cy - 20);
+            while(freeKOutside.length < 2) {
+                let k = { type: 'K', x: cx + (Math.random()-0.5)*100, y: 20, fixed: false, r: 8, vx:(Math.random()-0.5), vy:(Math.random()-0.5) };
+                simState.ions.push(k); freeKOutside.push(k);
+            }
+            freeKOutside[0].id = 'k1'; freeKOutside[0].targetX = cx - 15; freeKOutside[0].targetY = cy - 10; freeKOutside[0].inX = cx - 60; freeKOutside[0].inY = cy + 80;
+            freeKOutside[1].id = 'k2'; freeKOutside[1].targetX = cx + 15; freeKOutside[1].targetY = cy - 10; freeKOutside[1].inX = cx + 60; freeKOutside[1].inY = cy + 80;
+        }
+
+        function moveTowards(obj, tx, ty, speed) {
+            let dx = tx - obj.x; let dy = ty - obj.y;
+            let dist = Math.hypot(dx, dy);
+            if (dist <= speed) { obj.x = tx; obj.y = ty; return true; }
+            obj.x += (dx/dist)*speed; obj.y += (dy/dist)*speed;
+            return false;
+        }
 
         function drawMembrane(yOffset, dipDepth = 0, dipWidth = 80, gap = 0, breakOpen = false) {
             ctx.fillStyle = COLORS.membrane;
-            
-            // Draw Tails
             ctx.beginPath();
             if (dipDepth === 0) {
-                // Flat
                 ctx.rect(0, yOffset - 15, width, 30);
-                ctx.fillStyle = '#cbd5e1'; // Lighter tail color
-                ctx.fill();
+                ctx.fillStyle = '#cbd5e1'; ctx.fill();
             } else {
-                // Complex dip path for endo/exo
-                // We won't draw detailed tails for the dip to keep it clean, just a thick stroke
-                ctx.lineWidth = 16;
-                ctx.strokeStyle = '#cbd5e1';
-                
-                let startGap = cx - dipWidth/2 - gap;
-                let endGap = cx + dipWidth/2 + gap;
-
-                ctx.beginPath();
-                ctx.moveTo(0, yOffset);
-                ctx.lineTo(startGap, yOffset);
-                if (!breakOpen) {
-                    ctx.bezierCurveTo(startGap, yOffset + dipDepth*0.8, endGap, yOffset + dipDepth*0.8, endGap, yOffset);
-                }
-                ctx.lineTo(width, yOffset);
-                ctx.stroke();
+                ctx.lineWidth = 16; ctx.strokeStyle = '#cbd5e1';
+                let startGap = cx - dipWidth/2 - gap; let endGap = cx + dipWidth/2 + gap;
+                ctx.beginPath(); ctx.moveTo(0, yOffset); ctx.lineTo(startGap, yOffset);
+                if (!breakOpen) ctx.bezierCurveTo(startGap, yOffset + dipDepth*0.8, endGap, yOffset + dipDepth*0.8, endGap, yOffset);
+                ctx.lineTo(width, yOffset); ctx.stroke();
             }
-
-            // Draw Heads (Top layer)
             drawLipidHeads(yOffset - 15, dipDepth, dipWidth, gap, breakOpen, -1);
-            // Draw Heads (Bottom layer)
             drawLipidHeads(yOffset + 15, dipDepth, dipWidth, gap, breakOpen, 1);
         }
 
         function drawLipidHeads(y, dipDepth, dipWidth, gap, breakOpen, direction) {
-            let startGap = cx - dipWidth/2 - gap;
-            let endGap = cx + dipWidth/2 + gap;
-            let headRadius = 6;
-            ctx.fillStyle = COLORS.head;
-
+            let startGap = cx - dipWidth/2 - gap; let endGap = cx + dipWidth/2 + gap;
+            let headRadius = 6; ctx.fillStyle = COLORS.head;
             for (let x = 0; x < width; x += headRadius * 2.5) {
                 if (dipDepth === 0) {
-                     // Leave gap for pump
                     if (currentModule === 'pump' && x > cx - 50 && x < cx + 50) continue;
-                    ctx.beginPath();
-                    ctx.arc(x, y, headRadius, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(x, y, headRadius, 0, Math.PI * 2); ctx.fill();
                 } else {
-                    // Curved membrane logic
                     if (x > startGap && x < endGap) {
-                        if (breakOpen) continue; // Gap is open
-                        
-                        // Draw along the dip curve (simplified math for visual effect)
-                        let normalizedX = (x - startGap) / (endGap - startGap); // 0 to 1
-                        // Parabola roughly approximating bezier
+                        if (breakOpen) continue; 
+                        let normalizedX = (x - startGap) / (endGap - startGap);
                         let curveY = y + direction*15 + Math.sin(normalizedX * Math.PI) * dipDepth;
-                        
-                        // Adjust Y slightly so heads face "outward" from curve
                         let normalY = curveY - direction*15;
-                        
-                        ctx.beginPath();
-                        ctx.arc(x, normalY, headRadius, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.beginPath(); ctx.arc(x, normalY, headRadius, 0, Math.PI * 2); ctx.fill();
                     } else {
-                        ctx.beginPath();
-                        ctx.arc(x, y, headRadius, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.beginPath(); ctx.arc(x, y, headRadius, 0, Math.PI * 2); ctx.fill();
                     }
                 }
             }
         }
 
-        function drawProteinPump(state, progress) {
-            ctx.save();
-            ctx.translate(cx, cy);
-            
+        function drawProteinPump(progress) {
+            ctx.save(); ctx.translate(cx, cy);
             ctx.fillStyle = COLORS.pump;
-            // Base pump structure
-            
-            // Animation values
-            // state 0: open inside, narrow outside (V shape)
-            // state 2: open outside, narrow inside (^ shape)
-            
-            let topWidth = 80;
-            let bottomWidth = 80;
-            let topGap = 20;
-            let bottomGap = 60; // Open inside initially
-            
-            if (state >= 1 && state < 3) {
-                // Transition to open outside
-                let p = state === 1 ? progress : (state === 2 ? 1 : 0);
-                topGap = 20 + p * 40;
-                bottomGap = 60 - p * 40;
-            } else if (state >= 3) {
-                 // Transition to open inside
-                let p = state === 3 ? progress : (state === 4 ? 1 : 0);
-                topGap = 60 - p * 40;
-                bottomGap = 20 + p * 40;
-            }
+            let topWidth = 80; let bottomWidth = 80;
+            let topGap = 20 + progress * 40; 
+            let bottomGap = 60 - progress * 40; 
 
-            // Left side
-            ctx.beginPath();
-            ctx.moveTo(-topWidth/2, -40);
-            ctx.lineTo(-topGap/2, -40);
-            ctx.lineTo(-bottomGap/2, 40);
-            ctx.lineTo(-bottomWidth/2, 40);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Right side
-            ctx.beginPath();
-            ctx.moveTo(topWidth/2, -40);
-            ctx.lineTo(topGap/2, -40);
-            ctx.lineTo(bottomGap/2, 40);
-            ctx.lineTo(bottomWidth/2, 40);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Draw bound phosphate if applicable
-            if (state >= 1 && state < 4) {
-                ctx.fillStyle = COLORS.atp;
-                ctx.beginPath();
-                ctx.arc(-bottomWidth/2 - 10, 20, 8, 0, Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle = 'black';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('P', -bottomWidth/2 - 10, 20);
-            }
-
+            ctx.beginPath(); ctx.moveTo(-topWidth/2, -40); ctx.lineTo(-topGap/2, -40); ctx.lineTo(-bottomGap/2, 40); ctx.lineTo(-bottomWidth/2, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(topWidth/2, -40); ctx.lineTo(topGap/2, -40); ctx.lineTo(bottomGap/2, 40); ctx.lineTo(bottomWidth/2, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
             ctx.restore();
         }
 
-        // --- Module Renderers ---
-
-        function updateAndRenderPump(dt) {
-            drawMembrane(cy, 0);
-
-            // Update drifting background ions
-            simState.ions.forEach(ion => {
-                if (!ion.fixed) {
-                    ion.x += ion.vx;
-                    ion.y += ion.vy;
-                    // Bounce off walls
-                    if(ion.x < 0 || ion.x > width) ion.vx *= -1;
-                    // Keep in respective fluid
-                    if (ion.type === 'Na' && ion.y < cy) { // EC Na
-                        if (ion.y < 0) ion.vy *= -1;
-                        if (ion.y > cy - 20) ion.vy *= -1;
-                    } else if (ion.type === 'K' && ion.y > cy) { // IC K
-                        if (ion.y > height) ion.vy *= -1;
-                        if (ion.y < cy + 20) ion.vy *= -1;
-                    } else {
-                        // The few exceptions
-                        if (ion.y < 0 || ion.y > height) ion.vy *= -1;
-                    }
-                }
-            });
-
-            // State Machine Logic
-            let speed = 2.0 * dt; // speed multiplier
-
-            if (simState.pumpState === 1) { // Binding ATP
-                simState.atp.active = true;
-                // Move ATP to pump
-                let targetX = cx - 40;
-                let targetY = cy + 20;
-                simState.atp.x += (targetX - simState.atp.x) * 0.05;
-                simState.atp.y += (targetY - simState.atp.y) * 0.05;
-
-                if (Math.abs(simState.atp.x - targetX) < 2) {
-                    // Keep pump open inside for a moment longer after ATP binds
-                    simState.atpBindDelay += dt;
-                    if (simState.atpBindDelay > 1.2) {
-                        simState.pumpAnimProgress += speed;
-                        if (simState.pumpAnimProgress >= 1) {
-                            simState.pumpAnimProgress = 1;
-                            simState.pumpState = 2; // Move to Na release
-                            
-                            pumpStats.atp++;
-                            updateStatsUI();
-
-                            // Set new targets for bound Na
-                            simState.ions.filter(i => i.id && i.type === 'Na').forEach((ion, idx) => {
-                                ion.targetX = cx + (idx-1)*40;
-                                ion.targetY = cy - 80 - Math.random()*20;
-                            });
-                            
-                            // ATP leaves as ADP
-                            simState.atp.split = true;
-                        }
-                    }
-                }
-            } else if (simState.pumpState === 2) { // Na releases, K enters
-                // Move Na out
-                let activeNa = simState.ions.filter(i => i.id && i.type === 'Na');
-                activeNa.forEach(ion => {
-                    ion.x += (ion.targetX - ion.x) * 0.05;
-                    ion.y += (ion.targetY - ion.y) * 0.05;
-                    
-                    // Release Na into Extracellular Fluid
-                    if (Math.abs(ion.y - ion.targetY) < 5) {
-                        ion.fixed = false;
-                        delete ion.id;
-                        ion.vx = (Math.random()-0.5)*2;
-                        ion.vy = -1 - Math.random()*2; // Float upwards
-                        pumpStats.na++;
-                        updateStatsUI();
-                    }
-                });
-                
-                // Move ADP away
-                simState.atp.y += 1;
-                simState.atp.x -= 1;
-
-                // Bring K into pump
-                let kIons = simState.ions.filter(i => i.id && i.type === 'K');
-                if (kIons.length === 2) {
-                    kIons[0].targetX = cx - 15; kIons[0].targetY = cy - 10;
-                    kIons[1].targetX = cx + 15; kIons[1].targetY = cy - 10;
-                }
-
-                let kReady = 0;
-                kIons.forEach(ion => {
-                    ion.x += (ion.targetX - ion.x) * 0.05;
-                    ion.y += (ion.targetY - ion.y) * 0.05;
-                    if (Math.abs(ion.x - ion.targetX) < 2) kReady++;
-                });
-
-                let activeNaCount = simState.ions.filter(i => i.id && i.type === 'Na').length;
-                if (kReady === 2 && activeNaCount === 0) {
-                    // Ready for next step, enable button
-                    document.getElementById('btn-pump-ions').disabled = false;
-                    document.getElementById('btn-bind-atp').disabled = true;
-                    simState.pumpState = 3; // Waiting for user
-                    simState.pumpAnimProgress = 0;
-                }
-            } else if (simState.pumpState === 4) { // Pump K in
-                simState.pumpAnimProgress += speed;
-                if (simState.pumpAnimProgress >= 1) {
-                    simState.pumpAnimProgress = 1;
-                    
-                    // Release K
-                    simState.ions.filter(i => i.id && i.type === 'K').forEach((ion, idx) => {
-                        ion.targetX = cx + (idx-0.5)*80;
-                        ion.targetY = cy + 80 + Math.random()*20;
-                    });
-                    simState.pumpState = 5;
-                }
-            } else if (simState.pumpState === 5) {
-                let activeK = simState.ions.filter(i => i.id && i.type === 'K');
-                activeK.forEach(ion => {
-                    ion.x += (ion.targetX - ion.x) * 0.05;
-                    ion.y += (ion.targetY - ion.y) * 0.05;
-                    
-                    // Release K into Cytoplasm
-                    if (Math.abs(ion.y - ion.targetY) < 5) {
-                        ion.fixed = false;
-                        delete ion.id;
-                        ion.vx = (Math.random()-0.5)*2;
-                        ion.vy = 1 + Math.random()*2; // Float downwards
-                        pumpStats.k++;
-                        updateStatsUI();
-                    }
-                });
-                
-                if (activeK.length === 0) {
-                    simState.pumpState = 6; // Done
-                    document.getElementById('btn-pump-ions').disabled = true;
-                    document.getElementById('btn-pump-ions').classList.add('hidden');
-                    document.getElementById('btn-bind-atp').classList.add('hidden');
-                    document.getElementById('btn-run-again').classList.remove('hidden');
-                }
-            } else if (simState.pumpState === 0) {
-                // Initial move of Na into pump
-                simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
-                    ion.x += (ion.targetX - ion.x) * 0.05;
-                    ion.y += (ion.targetY - ion.y) * 0.05;
-                });
-            }
-
-            // Draw Pump
-            drawProteinPump(simState.pumpState, simState.pumpAnimProgress);
-
-            // Draw Ions
-            simState.ions.forEach(ion => {
-                ctx.fillStyle = ion.type === 'Na' ? COLORS.na : COLORS.k;
-                ctx.beginPath();
-                ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI*2);
-                ctx.fill();
-                
-                // Optional: draw symbol
-                ctx.fillStyle = 'white';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(ion.type === 'Na' ? '+' : '+', ion.x, ion.y);
-            });
-
-            // Draw ATP
-            if (simState.atp.active) {
-                ctx.fillStyle = COLORS.atp;
-                ctx.save();
-                ctx.translate(simState.atp.x, simState.atp.y);
-                // Draw star/diamond shape
-                ctx.rotate(Math.PI/4);
-                ctx.fillRect(-10, -10, 20, 20);
-                ctx.restore();
-                
-                ctx.fillStyle = 'black';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(simState.atp.split ? 'ADP' : 'ATP', simState.atp.x, simState.atp.y);
-            }
-
-            // Labels
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        function drawLabels() {
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
             ctx.fillRect(10, 10, 150, 25);
             ctx.fillRect(10, height - 35, 150, 25);
             ctx.textAlign = 'left';
             ctx.textBaseline = 'alphabetic';
-            ctx.fillStyle = '#333';
+            ctx.fillStyle = '#1e293b';
             ctx.font = '14px font-bold Arial';
             ctx.fillText('Extracellular Fluid', 20, 27);
             ctx.fillText('Cytoplasm (Inside)', 20, height - 18);
+        }
+
+        function advancePumpState(nextState, waitBtnId) {
+            if (simState.autoMode) {
+                simState.pumpState = nextState;
+            } else {
+                simState.pumpState = nextState - 0.5; // fractional wait state
+                updateButtons(waitBtnId);
+            }
+        }
+
+        function updateButtons(activeId) {
+            ['btn-step1', 'btn-step2', 'btn-step3', 'btn-step4', 'btn-step5'].forEach(id => {
+                document.getElementById(id).disabled = true;
+            });
+            if (activeId && !simState.autoMode) document.getElementById(activeId).disabled = false;
+        }
+
+        function toggleAutoMode(isAuto) {
+            simState.autoMode = isAuto;
+            if (isAuto && currentModule === 'pump') {
+                updateButtons(null);
+                // Bump waiting states to active
+                if (simState.pumpState === 0) triggerPumpStep(1);
+                if (simState.pumpState === 1.5) triggerPumpStep(2);
+                if (simState.pumpState === 2.5) triggerPumpStep(3);
+                if (simState.pumpState === 3.5) triggerPumpStep(4);
+                if (simState.pumpState === 4.5) triggerPumpStep(5);
+            } else if (!isAuto && currentModule === 'pump') {
+                // If we uncheck it while active, it will naturally pause at the end of the current step
+            }
+        }
+
+        function triggerPumpStep(stepNum) {
+            if(simState.pumpState === 0 && stepNum === 1) { simState.pumpState = 1; updateButtons(null); }
+            if(simState.pumpState === 1.5 && stepNum === 2) { simState.pumpState = 2; updateButtons(null); }
+            if(simState.pumpState === 2.5 && stepNum === 3) { simState.pumpState = 3; updateButtons(null); }
+            if(simState.pumpState === 3.5 && stepNum === 4) { simState.pumpState = 4; updateButtons(null); }
+            if(simState.pumpState === 4.5 && stepNum === 5) { simState.pumpState = 5; updateButtons(null); }
+        }
+
+        function updateAndRenderPump(dt) {
+            drawMembrane(cy, 0);
+            let speed = 90 * dt; // ion movement speed
+
+            // Background ions drift
+            simState.ions.forEach(ion => {
+                if (!ion.fixed && !ion.id) {
+                    ion.x += ion.vx; ion.y += ion.vy;
+                    if(ion.x < 0 || ion.x > width) ion.vx *= -1;
+                    if (ion.type === 'Na' && ion.y < cy) { if (ion.y < 0) ion.vy *= -1; if (ion.y > cy - 20) ion.vy *= -1; } 
+                    else if (ion.type === 'K' && ion.y > cy) { if (ion.y > height) ion.vy *= -1; if (ion.y < cy + 20) ion.vy *= -1; } 
+                    else { if (ion.y < 0 || ion.y > height) ion.vy *= -1; }
+                }
+            });
+
+            // State Machine
+            if (simState.pumpState === 1) {
+                let allBound = true;
+                simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
+                    ion.fixed = true;
+                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed)) allBound = false;
+                });
+                if (allBound) advancePumpState(2, 'btn-step2');
+            } 
+            else if (simState.pumpState === 2) {
+                simState.atp.active = true;
+                if (moveTowards(simState.atp, cx - 40, cy + 20, speed)) {
+                    simState.waitTimer += dt;
+                    if (simState.waitTimer > 0.5) { // Split ATP
+                        simState.atp.isAdp = true;
+                        simState.pi.active = true;
+                        simState.pi.attached = true;
+                        simState.waitTimer = 0;
+                        advancePumpState(3, 'btn-step3');
+                    }
+                }
+            }
+            else if (simState.pumpState === 3) {
+                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; } // ADP drifts away
+                
+                simState.pumpAnimProgress += 2.5 * dt; // Animate to V inverted
+                if (simState.pumpAnimProgress >= 1) {
+                    simState.pumpAnimProgress = 1;
+                    let allOut = true;
+                    simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
+                        if (!moveTowards(ion, ion.outX, ion.outY, speed)) allOut = false;
+                    });
+                    if (allOut) {
+                        simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
+                            ion.fixed = false; delete ion.id; ion.vx = (Math.random()-0.5)*2; ion.vy = -1 - Math.random()*2;
+                            pumpStats.na++;
+                        });
+                        pumpStats.atp++;
+                        updateStatsUI();
+                        advancePumpState(4, 'btn-step4');
+                    }
+                }
+            }
+            else if (simState.pumpState === 4) {
+                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; }
+                let allBound = true;
+                simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
+                    ion.fixed = true;
+                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed)) allBound = false;
+                });
+                if (allBound) advancePumpState(5, 'btn-step5');
+            }
+            else if (simState.pumpState === 5) {
+                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; }
+                
+                simState.pi.attached = false;
+                simState.pi.x -= speed*0.5; simState.pi.y += speed*0.5; // Pi floats away
+
+                simState.pumpAnimProgress -= 2.5 * dt; // Animate to V normal
+                if (simState.pumpAnimProgress <= 0) {
+                    simState.pumpAnimProgress = 0;
+                    let allIn = true;
+                    simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
+                        if (!moveTowards(ion, ion.inX, ion.inY, speed)) allIn = false;
+                    });
+                    if (allIn) {
+                        simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
+                            ion.fixed = false; delete ion.id; ion.vx = (Math.random()-0.5)*2; ion.vy = 1 + Math.random()*2;
+                            pumpStats.k++;
+                        });
+                        updateStatsUI();
+                        setupNextCycleIons();
+                        
+                        if (simState.autoMode) {
+                            simState.pumpState = 1; // loop
+                        } else {
+                            simState.pumpState = 0; // stop
+                            updateButtons('btn-step1');
+                        }
+                    }
+                }
+            } else if (simState.pumpState % 1 !== 0) {
+                // In a wait state, keep floating ADP/Pi moving if they exist
+                if (simState.atp.isAdp) { simState.atp.x -= speed*0.2; simState.atp.y += speed*0.2; }
+            }
+
+            drawProteinPump(simState.pumpAnimProgress);
+
+            // Draw Ions
+            simState.ions.forEach(ion => {
+                ctx.fillStyle = ion.type === 'Na' ? COLORS.na : COLORS.k;
+                ctx.beginPath(); ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', ion.x, ion.y);
+            });
+
+            // Draw ATP / ADP
+            if (simState.atp.active) {
+                ctx.fillStyle = COLORS.atp; ctx.save(); ctx.translate(simState.atp.x, simState.atp.y);
+                ctx.rotate(Math.PI/4); ctx.fillRect(-10, -10, 20, 20); ctx.restore();
+                ctx.fillStyle = 'black'; ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(simState.atp.isAdp ? 'ADP' : 'ATP', simState.atp.x, simState.atp.y);
+            }
+
+            // Draw attached or floating Pi
+            if (simState.pi.active) {
+                if (simState.pi.attached) {
+                    // Lock position relative to pump
+                    simState.pi.x = cx - 50;
+                    simState.pi.y = cy + 20;
+                }
+                ctx.fillStyle = COLORS.atp;
+                ctx.beginPath(); ctx.arc(simState.pi.x, simState.pi.y, 10, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black'; ctx.font = '11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', simState.pi.x, simState.pi.y);
+            }
+
+            drawLabels();
         }
 
         function updateAndRenderEndo(dt) {
-            let p = simState.animProgress;
             let speed = 0.5 * dt;
-
             if (simState.isAnimating) {
                 simState.animProgress += speed;
-                if (simState.animProgress > 1) {
-                    simState.animProgress = 1;
-                    simState.isAnimating = false;
-                }
+                if (simState.animProgress > 1) { simState.animProgress = 1; simState.isAnimating = false; }
             }
+            let p = simState.animProgress;
+            let dipDepth = 0, gap = 0, breakOpen = false;
 
-            p = simState.animProgress;
+            if (p < 0.2) simState.particle.y = (cy - 120) + (p/0.2)*80;
+            else if (p < 0.7) { dipDepth = ((p - 0.2) / 0.5) * 60; simState.particle.y = (cy - 40) + dipDepth; } 
+            else if (p < 0.9) { let pinch = (p - 0.7) / 0.2; dipDepth = 60 - pinch * 60; gap = pinch * 10; breakOpen = true; simState.particle.y = (cy + 20) + pinch * 30; } 
+            else { dipDepth = 0; breakOpen = false; simState.particle.y = cy + 50 + ((p - 0.9) / 0.1) * 20; }
 
-            // Dip math based on progress
-            let dipDepth = 0;
-            let gap = 0;
-            let breakOpen = false;
-
-            if (p < 0.2) {
-                // Particle approaching
-                simState.particle.y = (cy - 120) + (p/0.2)*80; // Moves to cy - 40
-            } else if (p < 0.7) {
-                // Membrane dipping, particle follows
-                let dipP = (p - 0.2) / 0.5; // 0 to 1
-                dipDepth = dipP * 60;
-                simState.particle.y = (cy - 40) + dipDepth;
-            } else if (p < 0.9) {
-                // Pinching off
-                let pinchP = (p - 0.7) / 0.2; // 0 to 1
-                dipDepth = 60 - pinchP * 60; // membrane retracts
-                gap = pinchP * 10; // gap closes
-                breakOpen = true; 
-                simState.particle.y = (cy + 20) + pinchP * 30; // particle continues down
-            } else {
-                // Complete
-                dipDepth = 0;
-                breakOpen = false;
-                simState.particle.y = cy + 50 + ((p - 0.9) / 0.1) * 20; // settle down
-            }
-
-            // Draw particle
             ctx.fillStyle = COLORS.particle;
-            ctx.beginPath();
-            ctx.roundRect(simState.particle.x - 15, simState.particle.y - 15, 30, 30, 5);
-            ctx.fill();
+            ctx.beginPath(); ctx.roundRect(simState.particle.x - 15, simState.particle.y - 15, 30, 30, 5); ctx.fill();
 
-            // Draw vesicle if pinched off
             if (p >= 0.7) {
                 let pinchP = Math.min(1, Math.max(0, (p - 0.7) / 0.2));
-                let vesicleY = (cy + 20) + pinchP * 30;
-                if(p >= 0.9) vesicleY = simState.particle.y;
-                
-                ctx.strokeStyle = COLORS.membrane;
-                ctx.lineWidth = 12;
-                ctx.beginPath();
-                // Radius grows slightly as it pinches off
-                let vR = 30;
-                ctx.arc(cx, vesicleY, vR, 0, Math.PI*2);
-                ctx.stroke();
-
-                // Inner heads
+                let vesicleY = p >= 0.9 ? simState.particle.y : (cy + 20) + pinchP * 30;
+                ctx.strokeStyle = COLORS.membrane; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(cx, vesicleY, 30, 0, Math.PI*2); ctx.stroke();
                 ctx.fillStyle = COLORS.head;
-                for(let a=0; a<Math.PI*2; a+=0.5) {
-                    ctx.beginPath();
-                    ctx.arc(cx + Math.cos(a)*(vR-6), vesicleY + Math.sin(a)*(vR-6), 4, 0, Math.PI*2);
-                    ctx.fill();
-                }
-                 // Outer heads
-                for(let a=0; a<Math.PI*2; a+=0.4) {
-                    ctx.beginPath();
-                    ctx.arc(cx + Math.cos(a)*(vR+6), vesicleY + Math.sin(a)*(vR+6), 4, 0, Math.PI*2);
-                    ctx.fill();
-                }
+                for(let a=0; a<Math.PI*2; a+=0.5) { ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(24), vesicleY + Math.sin(a)*(24), 4, 0, Math.PI*2); ctx.fill(); }
+                for(let a=0; a<Math.PI*2; a+=0.4) { ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(36), vesicleY + Math.sin(a)*(36), 4, 0, Math.PI*2); ctx.fill(); }
             }
 
             drawMembrane(cy, dipDepth, 80, gap, breakOpen);
-            
-            // Labels
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.fillRect(10, 10, 150, 25);
-            ctx.fillRect(10, height - 35, 150, 25);
-            ctx.fillStyle = '#333';
-            ctx.font = '14px font-bold Arial';
-            ctx.fillText('Extracellular Fluid', 20, 27);
-            ctx.fillText('Cytoplasm (Inside)', 20, height - 18);
+            drawLabels();
         }
 
         function updateAndRenderExo(dt) {
-            let p = simState.animProgress;
             let speed = 0.4 * dt;
-
             if (simState.isAnimating) {
                 simState.animProgress += speed;
-                if (simState.animProgress > 1) {
-                    simState.animProgress = 1;
-                    simState.isAnimating = false;
-                }
+                if (simState.animProgress > 1) { simState.animProgress = 1; simState.isAnimating = false; }
             }
+            let p = simState.animProgress;
+            let vesicleY = cy + 120, dipDepth = 0, breakOpen = false, gap = 0, vR = 35;
 
-            p = simState.animProgress;
+            if (p < 0.3) vesicleY = (cy + 120) - (p/0.3)*80;
+            else if (p < 0.6) { vesicleY = cy + 40; let openP = (p - 0.3)/0.3; dipDepth = openP * 40; breakOpen = true; gap = openP * 30; vR = 35 + openP*20; } 
+            else if (p < 0.9) { vesicleY = cy + 40; let flatP = (p - 0.6)/0.3; dipDepth = 40 - flatP * 40; gap = 30 + flatP * 50; breakOpen = true; if (flatP > 0.8) gap = 0; }
 
-            let vesicleY = cy + 120;
-            let dipDepth = 0;
-            let breakOpen = false;
-            let gap = 0;
-            let vR = 35; // Vesicle radius
-
-            if (p < 0.3) {
-                // Vesicle moves up
-                vesicleY = (cy + 120) - (p/0.3)*80; // Ends at cy + 40
-            } else if (p < 0.6) {
-                // Membrane touches and opens
-                vesicleY = cy + 40;
-                let openP = (p - 0.3)/0.3; // 0 to 1
-                dipDepth = openP * 40; // Inverted dip visually (drawn positively below membrane)
-                breakOpen = true;
-                gap = openP * 30; // gap widens
-                
-                // Vesicle disappears as it merges, so we draw it merging
-                vR = 35 + openP*20; // flattens out
-            } else if (p < 0.9) {
-                // Flattening out
-                vesicleY = cy + 40;
-                let flatP = (p - 0.6)/0.3; // 0 to 1
-                dipDepth = 40 - flatP * 40; // retract to 0
-                gap = 30 + flatP * 50; // gap gets very wide
-                breakOpen = true;
-                if (flatP > 0.8) gap = 0; // seamlessly join back
-            }
-
-            // Draw vesicle if not fully merged
             if (p < 0.9) {
-                ctx.strokeStyle = COLORS.membrane;
-                ctx.lineWidth = 12;
-                
-                if (p < 0.3) {
-                    // Full circle
-                    ctx.beginPath();
-                    ctx.arc(cx, vesicleY, vR, 0, Math.PI*2);
-                    ctx.stroke();
-                } else {
-                    // Merging arc
-                    ctx.beginPath();
-                    // Draw lower half of vesicle attaching to membrane gap
-                    ctx.arc(cx, vesicleY, vR, Math.PI + 0.5, Math.PI*2 - 0.5, true); 
-                    ctx.stroke();
-                }
-
-                // Heads for vesicle
+                ctx.strokeStyle = COLORS.membrane; ctx.lineWidth = 12;
+                if (p < 0.3) { ctx.beginPath(); ctx.arc(cx, vesicleY, vR, 0, Math.PI*2); ctx.stroke(); } 
+                else { ctx.beginPath(); ctx.arc(cx, vesicleY, vR, Math.PI + 0.5, Math.PI*2 - 0.5, true); ctx.stroke(); }
                 ctx.fillStyle = COLORS.head;
                 for(let a=0; a<Math.PI*2; a+=0.4) {
-                    if (p >= 0.3 && a > Math.PI && a < Math.PI*2) continue; // Skip top heads when merging
-                    ctx.beginPath();
-                    ctx.arc(cx + Math.cos(a)*(vR-6), vesicleY + Math.sin(a)*(vR-6), 4, 0, Math.PI*2);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.arc(cx + Math.cos(a)*(vR+6), vesicleY + Math.sin(a)*(vR+6), 4, 0, Math.PI*2);
-                    ctx.fill();
+                    if (p >= 0.3 && a > Math.PI && a < Math.PI*2) continue;
+                    ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(vR-6), vesicleY + Math.sin(a)*(vR-6), 4, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(vR+6), vesicleY + Math.sin(a)*(vR+6), 4, 0, Math.PI*2); ctx.fill();
                 }
             }
 
-            drawMembrane(cy, -dipDepth, gap*2, gap, breakOpen); // Negative dip depth for inverted curve
+            drawMembrane(cy, -dipDepth, gap*2, gap, breakOpen);
 
-            // Particles logic
             simState.exoParticles.forEach(particle => {
-                if (p < 0.3) {
-                    // Inside vesicle, moving up with it
-                    particle.globalX = cx + particle.xOffset;
-                    particle.globalY = vesicleY + particle.yOffset;
-                } else if (p >= 0.3 && !particle.released) {
-                    // Release
-                    particle.released = true;
-                }
-
-                if (particle.released) {
-                    // Diffuse outward and upward
-                    particle.globalX += particle.vx;
-                    particle.globalY += particle.vy;
-                }
-
-                // Draw
-                ctx.fillStyle = COLORS.exoParticle;
-                ctx.beginPath();
-                ctx.arc(particle.globalX, particle.globalY, 6, 0, Math.PI*2);
-                ctx.fill();
+                if (p < 0.3) { particle.globalX = cx + particle.xOffset; particle.globalY = vesicleY + particle.yOffset; } 
+                else if (p >= 0.3 && !particle.released) { particle.released = true; }
+                if (particle.released) { particle.globalX += particle.vx; particle.globalY += particle.vy; }
+                ctx.fillStyle = COLORS.exoParticle; ctx.beginPath(); ctx.arc(particle.globalX, particle.globalY, 6, 0, Math.PI*2); ctx.fill();
             });
             
-            // Labels
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.fillRect(10, 10, 150, 25);
-            ctx.fillRect(10, height - 35, 150, 25);
-            ctx.fillStyle = '#333';
-            ctx.font = '14px font-bold Arial';
-            ctx.fillText('Extracellular Fluid', 20, 27);
-            ctx.fillText('Cytoplasm (Inside)', 20, height - 18);
+            drawLabels();
         }
 
-        // --- Main Loop ---
-
         function render(time) {
-            // Calculate delta time
-            let dt = (time - lastTime) / 1000; // seconds
-            if (dt > 0.1) dt = 0.1; // Cap dt for lag spikes
+            let dt = (time - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1;
             lastTime = time;
 
-            // Clear
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Background is handled by CSS on the canvas element, but we need to redraw gradient bounds if resizing happened
-            
-            if (currentModule === 'pump') {
-                updateAndRenderPump(dt);
-            } else if (currentModule === 'endo') {
-                updateAndRenderEndo(dt);
-            } else if (currentModule === 'exo') {
-                updateAndRenderExo(dt);
-            }
+            if (currentModule === 'pump') updateAndRenderPump(dt);
+            else if (currentModule === 'endo') updateAndRenderEndo(dt);
+            else if (currentModule === 'exo') updateAndRenderExo(dt);
 
             animationId = requestAnimationFrame(render);
         }
 
-        // --- Interaction Handlers ---
-
         function setModule(mod) {
             currentModule = mod;
-            
-            // Update tabs UI
             document.querySelectorAll('nav button').forEach(btn => {
-                btn.classList.remove('ring-white');
-                btn.classList.replace('bg-blue-700', 'bg-blue-500');
+                btn.classList.remove('ring-white'); btn.classList.replace('bg-blue-700', 'bg-blue-500');
             });
             const activeTab = document.getElementById(`tab-${mod}`);
-            activeTab.classList.replace('bg-blue-500', 'bg-blue-700');
-            activeTab.classList.add('ring-white');
+            activeTab.classList.replace('bg-blue-500', 'bg-blue-700'); activeTab.classList.add('ring-white');
 
-            // Update Scoreboard visibility
-            if (mod === 'pump') {
-                document.getElementById('pump-scoreboard').classList.remove('hidden');
-            } else {
-                document.getElementById('pump-scoreboard').classList.add('hidden');
-            }
+            if (mod === 'pump') document.getElementById('pump-scoreboard').classList.remove('hidden');
+            else document.getElementById('pump-scoreboard').classList.add('hidden');
 
-            // Update Controls UI
             document.getElementById('controls-pump').classList.add('hidden');
             document.getElementById('controls-endo').classList.add('hidden');
             document.getElementById('controls-exo').classList.add('hidden');
             document.getElementById(`controls-${mod}`).classList.remove('hidden');
 
-            // Update Info Panel
             const content = CONTENT[mod];
             document.getElementById('canvas-title').innerText = content.title;
             document.getElementById('legend').innerHTML = content.legend;
             
             const infoEl = document.getElementById('info-text');
             infoEl.innerHTML = content.text;
-            
-            // Re-trigger animation class for text panel
-            infoEl.classList.remove('fade-in');
-            void infoEl.offsetWidth; // trigger reflow
-            infoEl.classList.add('fade-in');
-
-            // Reset specific button states
-            if (mod === 'pump') {
-                document.getElementById('btn-bind-atp').disabled = false;
-                document.getElementById('btn-bind-atp').classList.remove('hidden');
-                document.getElementById('btn-pump-ions').disabled = true;
-                document.getElementById('btn-pump-ions').classList.remove('hidden');
-                document.getElementById('btn-run-again').classList.add('hidden');
-            } else if (mod === 'endo') {
-                document.getElementById('btn-engulf').disabled = false;
-            } else if (mod === 'exo') {
-                document.getElementById('btn-release').disabled = false;
-            }
+            infoEl.classList.remove('fade-in'); void infoEl.offsetWidth; infoEl.classList.add('fade-in');
 
             initModuleState();
+            
+            if (mod === 'pump') updateButtons(document.getElementById('auto-toggle').checked ? null : 'btn-step1');
+            if (mod === 'endo') document.getElementById('btn-engulf').disabled = false;
+            if (mod === 'exo') document.getElementById('btn-release').disabled = false;
         }
 
         function triggerAction(action) {
             if (action === 'reset') {
+                if(currentModule === 'pump' && document.getElementById('auto-toggle')) {
+                    document.getElementById('auto-toggle').checked = false;
+                }
                 initModuleState();
-                if (currentModule === 'pump') {
-                    document.getElementById('btn-bind-atp').disabled = false;
-                    document.getElementById('btn-bind-atp').classList.remove('hidden');
-                    document.getElementById('btn-pump-ions').disabled = true;
-                    document.getElementById('btn-pump-ions').classList.remove('hidden');
-                    document.getElementById('btn-run-again').classList.add('hidden');
-                } else if (currentModule === 'endo') {
-                    document.getElementById('btn-engulf').disabled = false;
-                } else if (currentModule === 'exo') {
-                    document.getElementById('btn-release').disabled = false;
-                }
-            } else if (action === 'bindATP' && simState.pumpState === 0) {
-                simState.pumpState = 1; // trigger cycle
-                simState.atp.active = true;
-            } else if (action === 'pumpIons' && simState.pumpState === 3) {
-                simState.pumpState = 4;
-            } else if (action === 'runAgain') {
-                // Reset pump logic without resetting stats or the whole fluid
-                simState.pumpState = 0;
-                simState.pumpAnimProgress = 0;
-                simState.atpBindDelay = 0;
-                simState.atp = { x: cx - 100, y: height - 50, bound: false, split: false, active: false };
-
-                // Re-bind 3 internal Na
-                let floatingNaInside = simState.ions.filter(i => !i.fixed && i.type === 'Na' && i.y > cy + 20);
-                let naToUse = floatingNaInside.slice(0, 3);
-                // Fallback spawn if not enough drifting ones
-                while (naToUse.length < 3) {
-                    let newNa = { type: 'Na', x: cx + (Math.random()-0.5)*100, y: height - 50, fixed: false, r: 8, vx:0, vy:0 };
-                    simState.ions.push(newNa);
-                    naToUse.push(newNa);
-                }
-                naToUse[0].id = 'na1'; naToUse[0].targetX = cx - 20; naToUse[0].targetY = cy + 30;
-                naToUse[1].id = 'na2'; naToUse[1].targetX = cx; naToUse[1].targetY = cy + 40;
-                naToUse[2].id = 'na3'; naToUse[2].targetX = cx + 20; naToUse[2].targetY = cy + 30;
-                naToUse.forEach(n => { n.fixed = true; });
-
-                // Re-bind 2 external K
-                let floatingKOutside = simState.ions.filter(i => !i.fixed && i.type === 'K' && i.y < cy - 20);
-                let kToUse = floatingKOutside.slice(0, 2);
-                while (kToUse.length < 2) {
-                    let newK = { type: 'K', x: cx + (Math.random()-0.5)*100, y: 50, fixed: false, r: 8, vx:0, vy:0 };
-                    simState.ions.push(newK);
-                    kToUse.push(newK);
-                }
-                kToUse[0].id = 'k1'; kToUse[0].targetX = cx - 15; kToUse[0].targetY = cy - 100;
-                kToUse[1].id = 'k2'; kToUse[1].targetX = cx + 15; kToUse[1].targetY = cy - 120;
-                kToUse.forEach(k => { k.fixed = true; });
-
-                // Update UI Buttons
-                document.getElementById('btn-run-again').classList.add('hidden');
-                document.getElementById('btn-bind-atp').classList.remove('hidden');
-                document.getElementById('btn-bind-atp').disabled = false;
-                document.getElementById('btn-pump-ions').classList.remove('hidden');
-                document.getElementById('btn-pump-ions').disabled = true;
-
+                if (currentModule === 'pump') updateButtons('btn-step1');
+                else if (currentModule === 'endo') document.getElementById('btn-engulf').disabled = false;
+                else if (currentModule === 'exo') document.getElementById('btn-release').disabled = false;
             } else if (action === 'engulf' && !simState.isAnimating) {
-                simState.isAnimating = true;
-                document.getElementById('btn-engulf').disabled = true;
+                simState.isAnimating = true; document.getElementById('btn-engulf').disabled = true;
             } else if (action === 'release' && !simState.isAnimating) {
-                simState.isAnimating = true;
-                document.getElementById('btn-release').disabled = true;
+                simState.isAnimating = true; document.getElementById('btn-release').disabled = true;
             }
         }
 
-        // --- Initialization ---
         window.onload = () => {
             resizeCanvas();
             setModule('pump');
             requestAnimationFrame(render);
         };
-
     </script>
 </body>
 </html>
