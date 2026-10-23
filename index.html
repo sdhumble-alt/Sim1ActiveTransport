@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Transport Interactive Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
+            background-color: #f1f5f9;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -18,110 +18,176 @@
             display: block;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, #dbeafe 0%, #dbeafe 45%, #fef9c3 55%, #fef9c3 100%);
-            border-radius: 0.5rem;
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            border-radius: 0.75rem;
         }
         .btn {
-            transition: all 0.2s ease-in-out;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn:active:not(:disabled) {
-            transform: scale(0.95);
+            transform: scale(0.97);
         }
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
+        }
+        .step-active {
+            ring: 2px;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
         }
         .fade-in {
-            animation: fadeIn 0.3s ease-in;
+            animation: fadeIn 0.35s ease-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="h-screen flex flex-col text-slate-800">
+<body class="h-screen flex flex-col text-slate-800 select-none">
 
-    <header class="bg-blue-600 text-white p-4 shadow-md z-10 shrink-0">
-        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-            <h1 class="text-2xl font-bold tracking-tight">Cellular Transport Simulator</h1>
-            <nav class="flex space-x-2">
-                <button onclick="setModule('pump')" id="tab-pump" class="btn px-4 py-2 bg-blue-700 hover:bg-blue-800 rounded-md font-semibold text-sm transition-colors ring-2 ring-white ring-offset-2 ring-offset-blue-600">Na+/K+ Pump</button>
-                <button onclick="setModule('endo')" id="tab-endo" class="btn px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded-md font-semibold text-sm transition-colors ring-2 ring-transparent ring-offset-2 ring-offset-blue-600">Endocytosis</button>
-                <button onclick="setModule('exo')" id="tab-exo" class="btn px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded-md font-semibold text-sm transition-colors ring-2 ring-transparent ring-offset-2 ring-offset-blue-600">Exocytosis</button>
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900 text-white px-6 py-3.5 shadow-lg z-20 shrink-0 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-inner border border-white/10">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white leading-tight">Cellular Transport Simulator</h1>
+                    <p class="text-xs text-slate-400 font-medium">Membrane Dynamics & Bioenergetics</p>
+                </div>
+            </div>
+            <nav class="flex space-x-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700/70">
+                <button onclick="setModule('pump')" id="tab-pump" class="btn px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm transition-all shadow-sm ring-1 ring-white/20">Na⁺/K⁺-ATPase Pump</button>
+                <button onclick="setModule('endo')" id="tab-endo" class="btn px-4 py-1.5 bg-transparent hover:bg-slate-700/60 text-slate-300 rounded-lg font-semibold text-sm transition-all ring-1 ring-transparent">Endocytosis</button>
+                <button onclick="setModule('exo')" id="tab-exo" class="btn px-4 py-1.5 bg-transparent hover:bg-slate-700/60 text-slate-300 rounded-lg font-semibold text-sm transition-all ring-1 ring-transparent">Exocytosis</button>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col md:flex-row max-w-6xl mx-auto w-full p-4 gap-4 overflow-hidden">
+    <!-- Main Workspace -->
+    <main class="flex-grow flex flex-col md:flex-row max-w-7xl mx-auto w-full p-4 gap-4 overflow-hidden">
         
-        <!-- Left Side: Canvas Area -->
-        <div class="flex-grow bg-white rounded-xl shadow-lg border border-slate-200 flex flex-col relative overflow-hidden min-h-[400px]">
-            <div class="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-2 rounded shadow-sm border border-slate-200 z-10 pointer-events-none">
-                <h2 id="canvas-title" class="font-bold text-lg text-slate-700 mb-1">Sodium-Potassium Pump</h2>
-                <div id="legend" class="text-xs text-slate-600 space-y-1"></div>
+        <!-- Left Side: Interactive Scientific Canvas -->
+        <div class="flex-grow bg-white rounded-2xl shadow-sm border border-slate-200/90 flex flex-col relative overflow-hidden min-h-[420px]">
+            
+            <!-- Top-Left Floating Legend Card -->
+            <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md p-3.5 rounded-xl shadow-md border border-slate-200/80 z-10 pointer-events-none max-w-xs">
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span id="state-badge" class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">E1 State</span>
+                    <h2 id="canvas-title" class="font-bold text-sm text-slate-800">Sodium-Potassium Pump</h2>
+                </div>
+                <div id="legend" class="text-xs text-slate-600 grid grid-cols-2 gap-x-4 gap-y-1.5 pt-1 border-t border-slate-100"></div>
             </div>
 
-            <!-- Scoreboard -->
-            <div id="pump-scoreboard" class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded shadow-sm border border-slate-200 z-10 pointer-events-none">
-                <h3 class="font-bold text-sm text-slate-700 mb-1 border-b pb-1">Transport Stats</h3>
-                <div class="text-xs text-slate-600 space-y-1 mt-2">
-                    <div>Na+ Moved Out: <span id="stat-na" class="font-bold text-red-500 text-sm">0</span></div>
-                    <div>K+ Moved In: <span id="stat-k" class="font-bold text-blue-500 text-sm">0</span></div>
-                    <div>ATP Used: <span id="stat-atp" class="font-bold text-yellow-600 text-sm">0</span></div>
+            <!-- Top-Right Scoreboard / Transport Telemetry -->
+            <div id="pump-scoreboard" class="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-3.5 rounded-xl shadow-md border border-slate-200/80 z-10 pointer-events-none min-w-[175px]">
+                <h3 class="font-bold text-[11px] uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-100 pb-1">Transport Telemetry</h3>
+                <div class="text-xs text-slate-700 space-y-1.5">
+                    <div class="flex justify-between items-center gap-3">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500"></span>3 Na⁺ Efflux:</span>
+                        <span id="stat-na" class="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200/60">0</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-3">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-500"></span>2 K⁺ Influx:</span>
+                        <span id="stat-k" class="font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/60">0</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-3">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span>ATP Hydrolyzed:</span>
+                        <span id="stat-atp" class="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">0</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="flex-grow relative w-full h-full p-2" id="canvas-container">
+            <!-- Canvas Wrapper -->
+            <div class="flex-grow relative w-full h-full p-1.5" id="canvas-container">
                 <canvas id="sim-canvas"></canvas>
             </div>
         </div>
 
-        <!-- Right Side: Info & Controls Panel -->
-        <div class="w-full md:w-80 flex flex-col gap-4 overflow-y-auto">
+        <!-- Right Side: Controls & Mechanism Panel -->
+        <div class="w-full md:w-80 lg:w-96 flex flex-col gap-4 overflow-y-auto shrink-0">
             
-            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 shrink-0">
-                <h3 class="text-sm uppercase tracking-wider font-bold text-slate-400 mb-4">Simulation Controls</h3>
+            <!-- Controls Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/90 shrink-0">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400">Simulation Controls</h3>
+                    <span id="step-status" class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">Ready</span>
+                </div>
                 
                 <!-- Pump Controls (5 Steps + Auto) -->
                 <div id="controls-pump" class="flex flex-col gap-2">
-                    <div class="flex items-center justify-between mb-2 bg-slate-50 p-2 rounded border border-slate-100">
-                        <span class="text-sm font-bold text-slate-700">Auto Mode Loop</span>
+                    <div class="flex items-center justify-between mb-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                        <div>
+                            <span class="text-sm font-bold text-slate-700 block">Continuous Auto-Cycle</span>
+                            <span class="text-[11px] text-slate-500">Run physiological transport loop</span>
+                        </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" id="auto-toggle" class="sr-only peer" onchange="toggleAutoMode(this.checked)">
-                          <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                            <input type="checkbox" id="auto-toggle" class="sr-only peer" onchange="toggleAutoMode(this.checked)">
+                            <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
-                    <button id="btn-step1" onclick="triggerPumpStep(1)" class="btn w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded shadow-sm text-sm">1. Bind Na+</button>
-                    <button id="btn-step2" onclick="triggerPumpStep(2)" class="btn w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded shadow-sm text-sm" disabled>2. Bind ATP</button>
-                    <button id="btn-step3" onclick="triggerPumpStep(3)" class="btn w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm text-sm" disabled>3. Release Na+</button>
-                    <button id="btn-step4" onclick="triggerPumpStep(4)" class="btn w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded shadow-sm text-sm" disabled>4. Bind K+</button>
-                    <button id="btn-step5" onclick="triggerPumpStep(5)" class="btn w-full py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded shadow-sm text-sm" disabled>5. Release K+</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
+
+                    <button id="btn-step1" onclick="triggerPumpStep(1)" class="btn w-full py-2.5 px-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-xl shadow-sm text-xs flex items-center justify-between">
+                        <span>1. Bind 3 Intracellular Na⁺</span>
+                        <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">E1 Affinity</span>
+                    </button>
+                    <button id="btn-step2" onclick="triggerPumpStep(2)" class="btn w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-900 font-bold rounded-xl shadow-sm text-xs flex items-center justify-between" disabled>
+                        <span>2. Hydrolyze ATP & Phosphorylate</span>
+                        <span class="text-[10px] bg-black/10 px-1.5 py-0.5 rounded">ATP → ADP + Pᵢ</span>
+                    </button>
+                    <button id="btn-step3" onclick="triggerPumpStep(3)" class="btn w-full py-2.5 px-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl shadow-sm text-xs flex items-center justify-between" disabled>
+                        <span>3. Conformational Shift & Release Na⁺</span>
+                        <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">E1-P → E2-P</span>
+                    </button>
+                    <button id="btn-step4" onclick="triggerPumpStep(4)" class="btn w-full py-2.5 px-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-sm text-xs flex items-center justify-between" disabled>
+                        <span>4. Bind 2 Extracellular K⁺</span>
+                        <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">E2-P Affinity</span>
+                    </button>
+                    <button id="btn-step5" onclick="triggerPumpStep(5)" class="btn w-full py-2.5 px-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-sm text-xs flex items-center justify-between" disabled>
+                        <span>5. Dephosphorylate & Release K⁺</span>
+                        <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">E2-P → E1</span>
+                    </button>
+
+                    <button onclick="triggerAction('reset')" class="btn w-full mt-1.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs border border-slate-200/80">
+                        Reset Simulation
+                    </button>
                 </div>
 
                 <!-- Endo Controls -->
-                <div id="controls-endo" class="flex flex-col gap-3 hidden">
-                    <button id="btn-engulf" onclick="triggerAction('engulf')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm">Engulf Particle</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
+                <div id="controls-endo" class="flex flex-col gap-2.5 hidden">
+                    <button id="btn-engulf" onclick="triggerAction('engulf')" class="btn w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-sm text-sm">
+                        Initiate Receptor-Mediated Endocytosis
+                    </button>
+                    <button onclick="triggerAction('reset')" class="btn w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs border border-slate-200/80">
+                        Reset Simulation
+                    </button>
                 </div>
 
                 <!-- Exo Controls -->
-                <div id="controls-exo" class="flex flex-col gap-3 hidden">
-                    <button id="btn-release" onclick="triggerAction('release')" class="btn w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded shadow-sm">Release Contents</button>
-                    <button onclick="triggerAction('reset')" class="btn w-full mt-2 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded text-sm">Reset Simulation</button>
+                <div id="controls-exo" class="flex flex-col gap-2.5 hidden">
+                    <button id="btn-release" onclick="triggerAction('release')" class="btn w-full py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-sm text-sm">
+                        Trigger Vesicle Docking & Exocytosis
+                    </button>
+                    <button onclick="triggerAction('reset')" class="btn w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs border border-slate-200/80">
+                        Reset Simulation
+                    </button>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex-grow shrink-0">
-                <h3 class="text-sm uppercase tracking-wider font-bold text-slate-400 mb-2">Mechanism</h3>
-                <div id="info-text" class="text-slate-600 text-sm leading-relaxed space-y-3"></div>
+            <!-- Mechanism Explanation Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/90 flex-grow">
+                <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2.5">Biochemical Mechanism</h3>
+                <div id="info-text" class="text-slate-600 text-xs sm:text-sm leading-relaxed space-y-2.5"></div>
             </div>
         </div>
     </main>
@@ -137,62 +203,136 @@
         let lastTime = 0;
         let pumpStats = { na: 0, k: 0, atp: 0 };
 
+        // Scientifically refined palette
         const COLORS = {
-            ecf: '#dbeafe', icf: '#fef9c3', membrane: '#94a3b8', head: '#475569',
-            pump: '#8b5cf6', na: '#ef4444', k: '#3b82f6', atp: '#eab308',
-            particle: '#22c55e', exoParticle: '#d946ef'
+            ecfTop: '#e0f2fe',       // Crisp extracellular fluid
+            ecfBottom: '#f0f9ff',
+            icfTop: '#fefce8',       // Warm intracellular cytosol
+            icfBottom: '#fef3c7',
+            lipidHeadOuter: '#0284c7', // Hydrophilic phosphate head (outer leaflet)
+            lipidHeadInner: '#0369a1', // Hydrophilic phosphate head (inner leaflet)
+            lipidTail: '#eab308',      // Hydrophobic fatty acid chains
+            membraneCore: '#fef08a',   // Hydrophobic core glow
+            pumpBody: '#6d28d9',       // Transmembrane alpha-helical bundle
+            pumpHighlight: '#8b5cf6',
+            pumpShadow: '#4c1d95',
+            na: '#f97316',             // Sodium (Na+) - Vibrant Orange/Red
+            naGlow: '#ffedd5',
+            k: '#0ea5e9',              // Potassium (K+) - Vibrant Cyan/Blue
+            kGlow: '#e0f2fe',
+            atp: '#f59e0b',            // ATP / Pi
+            adenosine: '#ec4899',      // Adenosine ring
+            particle: '#10b981',       // Endocytosis cargo
+            exoParticle: '#d946ef'     // Exocytosis neurotransmitters/proteins
         };
 
         const CONTENT = {
             pump: {
-                title: "Sodium-Potassium Pump",
+                title: "Na⁺/K⁺-ATPase Pump",
                 legend: `
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.na}]"></div> Na+ (Sodium)</div>
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.k}]"></div> K+ (Potassium)</div>
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-[${COLORS.atp}] rotate-45 transform"></div> ATP / P</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-orange-500 inline-block shadow-sm"></span> <span><strong>Na⁺</strong> (Sodium)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-500 inline-block shadow-sm"></span> <span><strong>K⁺</strong> (Potassium)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-sm"></span> <span><strong>ATP / Pᵢ</strong> (Energy)</span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block shadow-sm"></span> <span><strong>Phospholipid</strong></span></div>
                 `,
                 text: `
-                    <p><strong>Primary Active Transport</strong> moves ions across a cell membrane against their concentration gradient, requiring energy (ATP).</p>
-                    <ol class="list-decimal pl-4 space-y-1 mt-2">
-                        <li>Three <strong>Na+</strong> ions from inside the cell bind to the pump.</li>
-                        <li><strong>ATP</strong> binds, transferring a phosphate group (phosphorylation) and energy to the pump.</li>
-                        <li>The pump changes shape, releasing the 3 Na+ outside.</li>
-                        <li>Two <strong>K+</strong> ions from outside bind to the pump.</li>
-                        <li>The phosphate is released, the pump reverts to its original shape, and the 2 K+ are released inside.</li>
+                    <p><strong>Primary Active Transport</strong> uses energy directly from <strong>ATP hydrolysis</strong> to pump ions <em>against</em> their electrochemical gradients, maintaining resting membrane potential (<strong>-70 mV</strong>).</p>
+                    <ol class="list-decimal pl-4 space-y-1.5 mt-2 text-slate-700">
+                        <li><strong>E1 State (Open Inside):</strong> 3 intracellular <strong>Na⁺</strong> ions bind high-affinity cytoplasmic sites.</li>
+                        <li><strong>Phosphorylation:</strong> <strong>ATP</strong> transfers its terminal phosphate (<strong>Pᵢ</strong>) to a conserved <em>Aspartate</em> residue, releasing <strong>ADP</strong>.</li>
+                        <li><strong>E2-P State (Open Outside):</strong> Conformational change lowers Na⁺ affinity, expelling 3 <strong>Na⁺</strong> into the high-[Na⁺] extracellular fluid.</li>
+                        <li><strong>K⁺ Binding:</strong> 2 extracellular <strong>K⁺</strong> ions bind high-affinity sites on the E2-P conformation.</li>
+                        <li><strong>Dephosphorylation:</strong> Hydrolysis of <strong>Pᵢ</strong> restores the <strong>E1</strong> conformation, releasing 2 <strong>K⁺</strong> into the high-[K⁺] cytoplasm.</li>
                     </ol>
                 `
             },
             endo: {
-                title: "Endocytosis",
-                legend: `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm bg-[${COLORS.particle}]"></div> Extracellular Particle</div>`,
-                text: `<p><strong>Endocytosis</strong> is bulk active transport where a cell takes in large particles by engulfing them in an invagination of its membrane, forming a vesicle.</p>`
+                title: "Receptor-Mediated Endocytosis",
+                legend: `
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span> <span><strong>Macromolecule</strong></span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> <span><strong>Receptor / Coat</strong></span></div>
+                `,
+                text: `
+                    <p><strong>Endocytosis</strong> is an energy-dependent bulk transport mechanism by which cells internalize extracellular macromolecules and fluid.</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-2 text-slate-700">
+                        <li><strong>Cargo Recognition:</strong> Extracellular ligands bind specific transmembrane receptors on the outer leaflet.</li>
+                        <li><strong>Membrane Invagination:</strong> Cytosolic coat proteins (such as <em>clathrin</em>) assemble on the inner leaflet, bending the phospholipid bilayer inward.</li>
+                        <li><strong>Vesicle Scission:</strong> Membrane necks fuse and pinch off (via <em>dynamin</em> GTPase), encapsulating the cargo and trapped extracellular fluid within an intracellular lipid bilayer vesicle.</li>
+                    </ul>
+                `
             },
             exo: {
-                title: "Exocytosis",
-                legend: `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[${COLORS.exoParticle}]"></div> Secretory Product</div>`,
-                text: `<p><strong>Exocytosis</strong> is the reverse of endocytosis. Materials packaged in a vesicle fuse with the plasma membrane to expel contents outside the cell.</p>`
+                title: "Constitutive & Regulated Exocytosis",
+                legend: `
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-fuchsia-500 inline-block"></span> <span><strong>Secretory Protein</strong></span></div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span> <span><strong>Vesicle Bilayer</strong></span></div>
+                `,
+                text: `
+                    <p><strong>Exocytosis</strong> is the active secretory pathway where intracellular vesicles fuse with the plasma membrane to release hormones, neurotransmitters, or proteins.</p>
+                    <ul class="list-disc pl-4 space-y-1.5 mt-2 text-slate-700">
+                        <li><strong>Vesicle Trafficking & Tethering:</strong> Secretory vesicles budded from the Golgi apparatus are transported along cytoskeletal tracks to the plasma membrane.</li>
+                        <li><strong>Docking & Hemifusion:</strong> Vesicle and plasma membrane <em>SNARE</em> complexes zip together, bringing the two hydrophobic lipid cores into contact.</li>
+                        <li><strong>Fusion Pore Expansion:</strong> The vesicle bilayer seamlessly integrates into the plasma membrane, expelling soluble cargo into the extracellular space.</li>
+                    </ul>
+                `
             }
         };
+
+        let simState = {};
 
         function resizeCanvas() {
             const rect = container.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            width = rect.width; height = rect.height;
-            cx = width / 2; cy = height / 2;
-            canvas.style.background = `linear-gradient(to bottom, ${COLORS.ecf} 0%, ${COLORS.ecf} ${cy}px, ${COLORS.icf} ${cy}px, ${COLORS.icf} 100%)`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            width = rect.width;
+            height = rect.height;
+            cx = width / 2;
+            cy = height / 2;
             initModuleState();
         }
         window.addEventListener('resize', resizeCanvas);
-
-        let simState = {}; 
 
         function updateStatsUI() {
             document.getElementById('stat-na').innerText = pumpStats.na;
             document.getElementById('stat-k').innerText = pumpStats.k;
             document.getElementById('stat-atp').innerText = pumpStats.atp;
+        }
+
+        function updateStepBadge(state) {
+            const badge = document.getElementById('state-badge');
+            const status = document.getElementById('step-status');
+            if (!badge || !status) return;
+
+            if (currentModule !== 'pump') {
+                badge.innerText = currentModule === 'endo' ? 'Bulk Uptake' : 'Bulk Secretion';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200';
+                status.innerText = simState.isAnimating ? 'Active Transporting...' : 'Ready';
+                return;
+            }
+
+            if (state === 0 || state === 1) {
+                badge.innerText = 'E1 Conformation';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200';
+                status.innerText = state === 0 ? 'Awaiting Step 1' : 'Binding 3 Na⁺...';
+            } else if (state === 1.5 || state === 2) {
+                badge.innerText = 'E1 · 3Na⁺ Bound';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+                status.innerText = state === 1.5 ? 'Ready for ATP' : 'Phosphorylating...';
+            } else if (state === 2.5 || state === 3) {
+                badge.innerText = 'E1-P → E2-P Shift';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+                status.innerText = state === 2.5 ? 'Phosphorylated' : 'Releasing 3 Na⁺...';
+            } else if (state === 3.5 || state === 4) {
+                badge.innerText = 'E2-P Conformation';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-sky-100 text-sky-800 border border-sky-200';
+                status.innerText = state === 3.5 ? 'Open to ECF' : 'Binding 2 K⁺...';
+            } else if (state === 4.5 || state === 5) {
+                badge.innerText = 'E2-P · 2K⁺ → E1';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-purple-100 text-purple-800 border border-purple-200';
+                status.innerText = state === 4.5 ? 'Ready to Release' : 'Dephosphorylating...';
+            }
         }
 
         function initModuleState() {
@@ -201,10 +341,10 @@
                 ions: [],
                 // Pump state machine: 0(idle), 1(bindNa), 1.5(wait), 2(bindATP), 2.5(wait), 3(releaseNa), 3.5(wait), 4(bindK), 4.5(wait), 5(releaseK)
                 pumpState: 0, 
-                pumpAnimProgress: 0, // 0 = open inside, 1 = open outside
+                pumpAnimProgress: 0, // 0 = E1 (open inside), 1 = E2-P (open outside)
                 waitTimer: 0,
                 autoMode: document.getElementById('auto-toggle') ? document.getElementById('auto-toggle').checked : false,
-                atp: { active: false, x: 0, y: 0, isAdp: false },
+                atp: { active: false, x: 0, y: 0, isAdp: false, flash: 0 },
                 pi: { active: false, attached: false, x: 0, y: 0, vx: 0, vy: 0 },
                 
                 // Endo/Exo specific
@@ -216,189 +356,789 @@
                 pumpStats = { na: 0, k: 0, atp: 0 };
                 updateStatsUI();
                 
-                // Generate ambient ions
-                for(let i=0; i<25; i++) {
-                    simState.ions.push({ type: 'Na', x: Math.random()*width, y: Math.random()*(cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*1, vx: (Math.random()-0.5)*1 });
-                    simState.ions.push({ type: 'K', x: Math.random()*width, y: cy+60 + Math.random()*(height-cy-60), fixed: false, r: 8, vy: (Math.random()-0.5)*1, vx: (Math.random()-0.5)*1 });
-                }
+                // SCIENTIFICALLY ACCURATE CONCENTRATION GRADIENTS:
+                // Extracellular Fluid (Top, y < cy - 55): HIGH [Na+] (28 ions), LOW [K+] (5 ions)
+                // Cytoplasm (Bottom, y > cy + 55): LOW [Na+] (6 ions), HIGH [K+] (26 ions)
+                const spawnIon = (type, region) => {
+                    let yMin = region === 'ecf' ? 35 : cy + 58;
+                    let yMax = region === 'ecf' ? cy - 58 : height - 35;
+                    return {
+                        type: type,
+                        region: region,
+                        x: 30 + Math.random() * (width - 60),
+                        y: yMin + Math.random() * Math.max(20, (yMax - yMin)),
+                        fixed: false,
+                        r: type === 'Na' ? 9.5 : 11,
+                        vx: (Math.random() - 0.5) * 0.9,
+                        vy: (Math.random() - 0.5) * 0.9,
+                        phase: Math.random() * Math.PI * 2
+                    };
+                };
+
+                // High Na+ Outside, Low K+ Outside
+                for (let i = 0; i < 26; i++) simState.ions.push(spawnIon('Na', 'ecf'));
+                for (let i = 0; i < 5; i++)  simState.ions.push(spawnIon('K', 'ecf'));
+
+                // Low Na+ Inside, High K+ Inside
+                for (let i = 0; i < 6; i++)  simState.ions.push(spawnIon('Na', 'icf'));
+                for (let i = 0; i < 24; i++) simState.ions.push(spawnIon('K', 'icf'));
 
                 setupNextCycleIons();
             }
             
-            if (currentModule === 'endo') simState.particle = { x: cx, y: cy - 120, size: 20 };
-            
-            if (currentModule === 'exo') {
-                simState.vesicleY = cy + 120;
-                simState.exoParticles = [];
-                for(let i=0; i<8; i++) {
-                    let angle = Math.random() * Math.PI * 2; let r = Math.random() * 15;
-                    simState.exoParticles.push({ xOffset: Math.cos(angle)*r, yOffset: Math.sin(angle)*r, globalX: 0, globalY: 0, released: false, vx: (Math.random()-0.5)*2, vy: -1 - Math.random() });
+            if (currentModule === 'endo') {
+                simState.particle = { x: cx, y: cy - 125, size: 22 };
+                // Add ambient solutes in ECF
+                simState.ambientDots = [];
+                for (let i = 0; i < 25; i++) {
+                    simState.ambientDots.push({
+                        x: Math.random() * width,
+                        y: 25 + Math.random() * (cy - 70),
+                        r: 2.5 + Math.random() * 2,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5
+                    });
                 }
             }
+            
+            if (currentModule === 'exo') {
+                simState.vesicleY = cy + 125;
+                simState.exoParticles = [];
+                for (let i = 0; i < 12; i++) {
+                    let angle = (i / 12) * Math.PI * 2 + (Math.random() * 0.3);
+                    let r = (i < 4) ? Math.random() * 7 : 12 + Math.random() * 8;
+                    simState.exoParticles.push({
+                        xOffset: Math.cos(angle) * r,
+                        yOffset: Math.sin(angle) * r,
+                        globalX: 0,
+                        globalY: 0,
+                        released: false,
+                        vx: Math.cos(angle - Math.PI / 2) * 1.4 + (Math.random() - 0.5) * 1.6,
+                        vy: -1.2 - Math.random() * 1.5
+                    });
+                }
+            }
+            updateStepBadge(simState.pumpState);
         }
 
-        // Helper to grab random ambient ions and assign them as actors for the next cycle
+        // Assign actors for the next pump cycle
         function setupNextCycleIons() {
-            simState.atp = { active: false, x: cx - 100, y: height - 50, isAdp: false };
+            simState.atp = { active: false, x: cx - 105, y: cy + 115, isAdp: false, flash: 0 };
             simState.pi = { active: false, attached: false, x: 0, y: 0, vx: 0, vy: 0 };
 
-            let freeNaInside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'Na' && i.y > cy + 20);
-            while(freeNaInside.length < 3) {
-                let n = { type: 'Na', x: cx + (Math.random()-0.5)*100, y: height - 20, fixed: false, r: 8, vx:(Math.random()-0.5), vy:(Math.random()-0.5) };
-                simState.ions.push(n); freeNaInside.push(n);
+            // Ensure at least 3 free Na+ in cytoplasm to bind
+            let freeNaInside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'Na' && i.y > cy + 40);
+            while (freeNaInside.length < 3) {
+                let n = {
+                    type: 'Na',
+                    region: 'icf',
+                    x: cx + (Math.random() - 0.5) * 180,
+                    y: height - 35 - Math.random() * 40,
+                    fixed: false,
+                    r: 9.5,
+                    vx: (Math.random() - 0.5) * 0.9,
+                    vy: (Math.random() - 0.5) * 0.9,
+                    phase: Math.random() * Math.PI * 2
+                };
+                simState.ions.push(n);
+                freeNaInside.push(n);
             }
-            freeNaInside[0].id = 'na1'; freeNaInside[0].targetX = cx - 20; freeNaInside[0].targetY = cy + 5; freeNaInside[0].outX = cx - 40; freeNaInside[0].outY = cy - 80;
-            freeNaInside[1].id = 'na2'; freeNaInside[1].targetX = cx; freeNaInside[1].targetY = cy + 15; freeNaInside[1].outX = cx; freeNaInside[1].outY = cy - 100;
-            freeNaInside[2].id = 'na3'; freeNaInside[2].targetX = cx + 20; freeNaInside[2].targetY = cy + 5; freeNaInside[2].outX = cx + 40; freeNaInside[2].outY = cy - 80;
 
-            let freeKOutside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'K' && i.y < cy - 20);
-            while(freeKOutside.length < 2) {
-                let k = { type: 'K', x: cx + (Math.random()-0.5)*100, y: 20, fixed: false, r: 8, vx:(Math.random()-0.5), vy:(Math.random()-0.5) };
-                simState.ions.push(k); freeKOutside.push(k);
+            // Sort by distance to pump so nearby Na+ bind smoothly
+            freeNaInside.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+
+            // 3 distinct Na+ binding pockets on left inner wall of pump
+            freeNaInside[0].id = 'na1'; freeNaInside[0].targetX = cx - 20; freeNaInside[0].targetY = cy - 18; freeNaInside[0].outX = cx - 55; freeNaInside[0].outY = cy - 95;
+            freeNaInside[1].id = 'na2'; freeNaInside[1].targetX = cx - 23; freeNaInside[1].targetY = cy + 2;  freeNaInside[1].outX = cx;      freeNaInside[1].outY = cy - 110;
+            freeNaInside[2].id = 'na3'; freeNaInside[2].targetX = cx - 18; freeNaInside[2].targetY = cy + 22; freeNaInside[2].outX = cx + 55; freeNaInside[2].outY = cy - 95;
+
+            // Ensure at least 2 free K+ in extracellular fluid to bind
+            let freeKOutside = simState.ions.filter(i => !i.fixed && !i.id && i.type === 'K' && i.y < cy - 40);
+            while (freeKOutside.length < 2) {
+                let k = {
+                    type: 'K',
+                    region: 'ecf',
+                    x: cx + (Math.random() - 0.5) * 180,
+                    y: 40 + Math.random() * 40,
+                    fixed: false,
+                    r: 11,
+                    vx: (Math.random() - 0.5) * 0.9,
+                    vy: (Math.random() - 0.5) * 0.9,
+                    phase: Math.random() * Math.PI * 2
+                };
+                simState.ions.push(k);
+                freeKOutside.push(k);
             }
-            freeKOutside[0].id = 'k1'; freeKOutside[0].targetX = cx - 15; freeKOutside[0].targetY = cy - 10; freeKOutside[0].inX = cx - 60; freeKOutside[0].inY = cy + 80;
-            freeKOutside[1].id = 'k2'; freeKOutside[1].targetX = cx + 15; freeKOutside[1].targetY = cy - 10; freeKOutside[1].inX = cx + 60; freeKOutside[1].inY = cy + 80;
+
+            freeKOutside.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+
+            // 2 distinct K+ binding pockets on right inner wall of pump
+            freeKOutside[0].id = 'k1'; freeKOutside[0].targetX = cx + 19; freeKOutside[0].targetY = cy - 11; freeKOutside[0].inX = cx - 50; freeKOutside[0].inY = cy + 95;
+            freeKOutside[1].id = 'k2'; freeKOutside[1].targetX = cx + 19; freeKOutside[1].targetY = cy + 13; freeKOutside[1].inX = cx + 50; freeKOutside[1].inY = cy + 95;
         }
 
         function moveTowards(obj, tx, ty, speed) {
-            let dx = tx - obj.x; let dy = ty - obj.y;
+            let dx = tx - obj.x;
+            let dy = ty - obj.y;
             let dist = Math.hypot(dx, dy);
-            if (dist <= speed) { obj.x = tx; obj.y = ty; return true; }
-            obj.x += (dx/dist)*speed; obj.y += (dy/dist)*speed;
+            if (dist <= speed) {
+                obj.x = tx;
+                obj.y = ty;
+                return true;
+            }
+            obj.x += (dx / dist) * speed;
+            obj.y += (dy / dist) * speed;
             return false;
         }
 
-        function drawMembrane(yOffset, dipDepth = 0, dipWidth = 80, gap = 0, breakOpen = false) {
-            ctx.fillStyle = COLORS.membrane;
-            ctx.beginPath();
-            if (dipDepth === 0) {
-                ctx.rect(0, yOffset - 15, width, 30);
-                ctx.fillStyle = '#cbd5e1'; ctx.fill();
-            } else {
-                ctx.lineWidth = 16; ctx.strokeStyle = '#cbd5e1';
-                let startGap = cx - dipWidth/2 - gap; let endGap = cx + dipWidth/2 + gap;
-                ctx.beginPath(); ctx.moveTo(0, yOffset); ctx.lineTo(startGap, yOffset);
-                if (!breakOpen) ctx.bezierCurveTo(startGap, yOffset + dipDepth*0.8, endGap, yOffset + dipDepth*0.8, endGap, yOffset);
-                ctx.lineTo(width, yOffset); ctx.stroke();
+        // Draw Environment Backgrounds (ECF & Cytoplasm + Water/Cytosol Subtle Gradients)
+        function drawEnvironment() {
+            // Extracellular Fluid (Top)
+            let ecfGrad = ctx.createLinearGradient(0, 0, 0, cy);
+            ecfGrad.addColorStop(0, '#bae6fd');
+            ecfGrad.addColorStop(0.85, '#e0f2fe');
+            ecfGrad.addColorStop(1, '#f0f9ff');
+            ctx.fillStyle = ecfGrad;
+            ctx.fillRect(0, 0, width, cy);
+
+            // Cytoplasm / Intracellular Fluid (Bottom)
+            let icfGrad = ctx.createLinearGradient(0, cy, 0, height);
+            icfGrad.addColorStop(0, '#fefce8');
+            icfGrad.addColorStop(0.2, '#fef9c3');
+            icfGrad.addColorStop(1, '#fde68a');
+            ctx.fillStyle = icfGrad;
+            ctx.fillRect(0, cy, width, height - cy);
+
+            // Subtle Cytoskeletal Actin Filaments in Cytoplasm
+            ctx.save();
+            ctx.strokeStyle = 'rgba(217, 119, 6, 0.08)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                let yStart = cy + 75 + i * 35;
+                ctx.moveTo(0, yStart);
+                ctx.bezierCurveTo(width * 0.3, yStart - 18, width * 0.7, yStart + 18, width, yStart - 8);
+                ctx.stroke();
             }
-            drawLipidHeads(yOffset - 15, dipDepth, dipWidth, gap, breakOpen, -1);
-            drawLipidHeads(yOffset + 15, dipDepth, dipWidth, gap, breakOpen, 1);
-        }
-
-        function drawLipidHeads(y, dipDepth, dipWidth, gap, breakOpen, direction) {
-            let startGap = cx - dipWidth/2 - gap; let endGap = cx + dipWidth/2 + gap;
-            let headRadius = 6; ctx.fillStyle = COLORS.head;
-            for (let x = 0; x < width; x += headRadius * 2.5) {
-                if (dipDepth === 0) {
-                    if (currentModule === 'pump' && x > cx - 50 && x < cx + 50) continue;
-                    ctx.beginPath(); ctx.arc(x, y, headRadius, 0, Math.PI * 2); ctx.fill();
-                } else {
-                    if (x > startGap && x < endGap) {
-                        if (breakOpen) continue; 
-                        let normalizedX = (x - startGap) / (endGap - startGap);
-                        let curveY = y + direction*15 + Math.sin(normalizedX * Math.PI) * dipDepth;
-                        let normalY = curveY - direction*15;
-                        ctx.beginPath(); ctx.arc(x, normalY, headRadius, 0, Math.PI * 2); ctx.fill();
-                    } else {
-                        ctx.beginPath(); ctx.arc(x, y, headRadius, 0, Math.PI * 2); ctx.fill();
-                    }
-                }
-            }
-        }
-
-        function drawProteinPump(progress) {
-            ctx.save(); ctx.translate(cx, cy);
-            ctx.fillStyle = COLORS.pump;
-            let topWidth = 80; let bottomWidth = 80;
-            let topGap = 20 + progress * 40; 
-            let bottomGap = 60 - progress * 40; 
-
-            ctx.beginPath(); ctx.moveTo(-topWidth/2, -40); ctx.lineTo(-topGap/2, -40); ctx.lineTo(-bottomGap/2, 40); ctx.lineTo(-bottomWidth/2, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(topWidth/2, -40); ctx.lineTo(topGap/2, -40); ctx.lineTo(bottomGap/2, 40); ctx.lineTo(bottomWidth/2, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
             ctx.restore();
         }
 
+        // Helper to draw an individual phospholipid molecule (head + 2 hydrophobic fatty acid tails)
+        function drawSinglePhospholipid(hx, hy, nx, ny, tailLen, headRadius, isOuter, timeOffset) {
+            // Perpendicular vector for dual tails
+            const px = -ny;
+            const py = nx;
+            const tailSpread = headRadius * 0.48;
+
+            // Slight thermal undulation
+            const wave = Math.sin(simState.time * 3.5 + timeOffset) * 1.1;
+
+            // Tail 1 (Saturated straight-ish chain)
+            const t1StartX = hx + nx * (headRadius * 0.7) - px * tailSpread;
+            const t1StartY = hy + ny * (headRadius * 0.7) - py * tailSpread;
+            const t1MidX = t1StartX + nx * (tailLen * 0.5) + px * wave;
+            const t1MidY = t1StartY + ny * (tailLen * 0.5) + py * wave;
+            const t1EndX = t1StartX + nx * tailLen;
+            const t1EndY = t1StartY + ny * tailLen;
+
+            // Tail 2 (Unsaturated cis-double-bond kinked chain)
+            const t2StartX = hx + nx * (headRadius * 0.7) + px * tailSpread;
+            const t2StartY = hy + ny * (headRadius * 0.7) + py * tailSpread;
+            const t2MidX = t2StartX + nx * (tailLen * 0.55) + px * (2.2 + wave);
+            const t2MidY = t2StartY + ny * (tailLen * 0.55) + py * (2.2 + wave);
+            const t2EndX = t2StartX + nx * (tailLen * 0.92) + px * 1.2;
+            const t2EndY = t2StartY + ny * (tailLen * 0.92) + py * 1.2;
+
+            ctx.strokeStyle = '#ca8a04';
+            ctx.lineWidth = 1.85;
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(t1StartX, t1StartY);
+            ctx.quadraticCurveTo(t1MidX, t1MidY, t1EndX, t1EndY);
+            ctx.moveTo(t2StartX, t2StartY);
+            ctx.quadraticCurveTo(t2MidX, t2MidY, t2EndX, t2EndY);
+            ctx.stroke();
+
+            // 3D Shaded Hydrophilic Phosphate Head
+            let headGrad = ctx.createRadialGradient(
+                hx - headRadius * 0.3,
+                hy - headRadius * 0.3,
+                headRadius * 0.1,
+                hx,
+                hy,
+                headRadius
+            );
+            if (isOuter) {
+                headGrad.addColorStop(0, '#7dd3fc');
+                headGrad.addColorStop(0.55, '#0284c7');
+                headGrad.addColorStop(1, '#0c4a6e');
+            } else {
+                headGrad.addColorStop(0, '#93c5fd');
+                headGrad.addColorStop(0.55, '#2563eb');
+                headGrad.addColorStop(1, '#1e3a8a');
+            }
+
+            ctx.fillStyle = headGrad;
+            ctx.beginPath();
+            ctx.arc(hx, hy, headRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.25)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        }
+
+        // Scientifically accurate Phospholipid Bilayer Membrane
+        function drawMembrane(yOffset, dipDepth = 0, dipWidth = 110, gap = 0, breakOpen = false) {
+            const bilayerHalfThick = 20;
+            const headRadius = 6.2;
+            const spacing = 13.5;
+            const tailLen = 13.5;
+
+            let startGap = cx - dipWidth / 2 - gap;
+            let endGap = cx + dipWidth / 2 + gap;
+
+            // Helper for centerline Y and normal along invagination/evagination
+            const getCurvePoint = (x) => {
+                if (dipDepth === 0 || x <= startGap || x >= endGap) {
+                    return { y: yOffset, nx: 0, ny: 1 };
+                }
+                let normX = (x - startGap) / (endGap - startGap);
+                // Smooth cosine bell curve for natural membrane bending
+                let bell = 0.5 * (1 - Math.cos(normX * Math.PI * 2));
+                let dy_dx = (Math.PI / (endGap - startGap)) * Math.sin(normX * Math.PI * 2) * dipDepth;
+                let len = Math.hypot(1, dy_dx);
+                return {
+                    y: yOffset + bell * dipDepth,
+                    nx: -dy_dx / len,
+                    ny: 1 / len
+                };
+            };
+
+            // 1. Draw Hydrophobic Core Background Ribbon
+            ctx.save();
+            ctx.strokeStyle = 'rgba(253, 224, 71, 0.38)';
+            ctx.lineWidth = bilayerHalfThick * 1.85;
+            ctx.lineCap = 'round';
+
+            if (currentModule === 'pump') {
+                // Leave central channel space for transmembrane protein
+                ctx.beginPath();
+                ctx.moveTo(0, yOffset);
+                ctx.lineTo(cx - 56, yOffset);
+                ctx.moveTo(cx + 56, yOffset);
+                ctx.lineTo(width, yOffset);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(0, yOffset);
+                for (let x = 0; x <= width; x += 6) {
+                    if (breakOpen && x > cx - gap - 18 && x < cx + gap + 18) {
+                        ctx.stroke();
+                        ctx.beginPath();
+                        continue;
+                    }
+                    let pt = getCurvePoint(x);
+                    ctx.lineTo(x, pt.y);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 2. Draw Individual Phospholipids Along Both Leaflets
+            for (let x = 6; x < width + 6; x += spacing) {
+                // Skip central transmembrane protein zone in pump module
+                if (currentModule === 'pump' && x > cx - 58 && x < cx + 58) continue;
+
+                // Skip broken fusion/scission neck when breakOpen is true
+                if (breakOpen && x > cx - gap - 22 && x < cx + gap + 22) continue;
+
+                let pt = getCurvePoint(x);
+
+                // Outer Leaflet (Top side of membrane: heads at -bilayerHalfThick, tails pointing +normal)
+                let outX = x - pt.nx * bilayerHalfThick;
+                let outY = pt.y - pt.ny * bilayerHalfThick;
+                drawSinglePhospholipid(outX, outY, pt.nx, pt.ny, tailLen, headRadius, true, x * 0.08);
+
+                // Inner Leaflet (Bottom side of membrane: heads at +bilayerHalfThick, tails pointing -normal)
+                let inX = x + pt.nx * bilayerHalfThick;
+                let inY = pt.y + pt.ny * bilayerHalfThick;
+                drawSinglePhospholipid(inX, inY, -pt.nx, -pt.ny, tailLen, headRadius, false, x * 0.08 + 1.5);
+            }
+
+            // Subtle Membrane Potential Charge Indicators (+ outside, - inside) in Pump Module
+            if (currentModule === 'pump') {
+                ctx.save();
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let x = 45; x < width - 30; x += 95) {
+                    if (Math.abs(x - cx) < 90) continue;
+                    // Extracellular positive charge layer
+                    ctx.fillStyle = 'rgba(2, 132, 199, 0.45)';
+                    ctx.fillText('+', x, yOffset - 36);
+                    // Intracellular negative resting potential layer (-70mV)
+                    ctx.fillStyle = 'rgba(180, 83, 9, 0.5)';
+                    ctx.fillText('−', x, yOffset + 36);
+                }
+                ctx.restore();
+            }
+        }
+
+        // Draw a complete phospholipid bilayer vesicle (for Endocytosis & Exocytosis)
+        function drawBilayerVesicle(vx, vy, radius, openTopAngle = 0) {
+            const innerR = radius - 12;
+            const outerR = radius + 12;
+            const headR = 5.2;
+            const tailLen = 9.5;
+
+            // Hydrophobic core ring
+            ctx.save();
+            ctx.strokeStyle = 'rgba(253, 224, 71, 0.42)';
+            ctx.lineWidth = 22;
+            ctx.beginPath();
+            if (openTopAngle > 0) {
+                ctx.arc(vx, vy, radius, -Math.PI / 2 + openTopAngle, Math.PI * 1.5 - openTopAngle, false);
+            } else {
+                ctx.arc(vx, vy, radius, 0, Math.PI * 2);
+            }
+            ctx.stroke();
+            ctx.restore();
+
+            // Outer leaflet of vesicle
+            let outerCount = Math.floor((2 * Math.PI * outerR) / 12.5);
+            for (let i = 0; i < outerCount; i++) {
+                let a = (i / outerCount) * Math.PI * 2;
+                // Check if angle is near -PI/2 (top opening)
+                let diffTop = Math.atan2(Math.sin(a + Math.PI / 2), Math.cos(a + Math.PI / 2));
+                if (openTopAngle > 0 && Math.abs(diffTop) < openTopAngle) continue;
+
+                let hx = vx + Math.cos(a) * outerR;
+                let hy = vy + Math.sin(a) * outerR;
+                drawSinglePhospholipid(hx, hy, -Math.cos(a), -Math.sin(a), tailLen, headR, false, i * 0.4);
+            }
+
+            // Inner leaflet of vesicle
+            let innerCount = Math.floor((2 * Math.PI * innerR) / 12.5);
+            for (let i = 0; i < innerCount; i++) {
+                let a = (i / innerCount) * Math.PI * 2;
+                let diffTop = Math.atan2(Math.sin(a + Math.PI / 2), Math.cos(a + Math.PI / 2));
+                if (openTopAngle > 0 && Math.abs(diffTop) < openTopAngle) continue;
+
+                let hx = vx + Math.cos(a) * innerR;
+                let hy = vy + Math.sin(a) * innerR;
+                drawSinglePhospholipid(hx, hy, Math.cos(a), Math.sin(a), tailLen, headR, true, i * 0.4 + 1);
+            }
+        }
+
+        // Scientifically detailed Na+/K+-ATPase Transmembrane Protein Complex
+        function drawProteinPump(progress) {
+            // progress = 0: E1 state (Open to Cytoplasm / Inside, high Na+ affinity)
+            // progress = 1: E2-P state (Open to Extracellular Fluid / Outside, high K+ affinity)
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            const topOpen = 10 + progress * 34;      // Narrow at 0, wide at 1
+            const bottomOpen = 44 - progress * 34;   // Wide at 0, narrow at 1
+            const outerTop = 52 + progress * 8;
+            const outerBot = 58 - progress * 6;
+
+            // Subtle protein interior vestibule cavity behind ions
+            let cavGrad = ctx.createLinearGradient(0, -48, 0, 48);
+            cavGrad.addColorStop(0, '#2e1065');
+            cavGrad.addColorStop(0.5, '#3b0764');
+            cavGrad.addColorStop(1, '#2e1065');
+            ctx.fillStyle = cavGrad;
+            ctx.beginPath();
+            ctx.moveTo(-topOpen, -44);
+            ctx.lineTo(topOpen, -44);
+            ctx.lineTo(bottomOpen, 44);
+            ctx.lineTo(-bottomOpen, 44);
+            ctx.closePath();
+            ctx.fill();
+
+            // Helper to draw a sculpted transmembrane alpha-helical subunit
+            const drawSubunit = (isLeft) => {
+                const dir = isLeft ? -1 : 1;
+                ctx.save();
+
+                let grad = ctx.createLinearGradient(dir * 55, -50, dir * 5, 50);
+                grad.addColorStop(0, '#5b21b6');
+                grad.addColorStop(0.45, '#8b5cf6');
+                grad.addColorStop(0.85, '#6d28d9');
+                grad.addColorStop(1, '#4c1d95');
+
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = '#3b0764';
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                // Top extracellular loop
+                ctx.moveTo(dir * topOpen, -45);
+                ctx.quadraticCurveTo(dir * ((topOpen + outerTop) * 0.5), -56, dir * outerTop, -42);
+                // Outer lipid-facing transmembrane surface
+                ctx.bezierCurveTo(dir * (outerTop + 10), -15, dir * (outerBot + 10), 15, dir * outerBot, 42);
+                // Bottom cytosolic loop (includes P-domain on left subunit)
+                if (isLeft) {
+                    ctx.quadraticCurveTo(dir * (outerBot - 6), 58, dir * (bottomOpen + 14), 52);
+                    ctx.quadraticCurveTo(dir * (bottomOpen + 4), 48, dir * bottomOpen, 44);
+                } else {
+                    ctx.quadraticCurveTo(dir * ((bottomOpen + outerBot) * 0.5), 55, dir * bottomOpen, 44);
+                }
+
+                // Inner ion-binding channel wall with specific complementary binding pockets
+                if (isLeft) {
+                    // 3 Na+ binding pockets (situated at y = +22, +2, -18)
+                    ctx.lineTo(dir * bottomOpen, 30);
+                    // Pocket 3 (bottom Na+)
+                    ctx.arc(dir * 18, 22, 9.5, Math.PI * 0.45, -Math.PI * 0.45, true);
+                    // Pocket 2 (middle Na+)
+                    ctx.arc(dir * 23, 2, 9.5, Math.PI * 0.45, -Math.PI * 0.45, true);
+                    // Pocket 1 (top Na+)
+                    ctx.arc(dir * 20, -18, 9.5, Math.PI * 0.45, -Math.PI * 0.45, true);
+                    ctx.lineTo(dir * topOpen, -45);
+                } else {
+                    // 2 K+ binding pockets on right wall (situated at y = +13, -11)
+                    ctx.lineTo(dir * bottomOpen, 24);
+                    // Lower K+ pocket
+                    ctx.arc(dir * 19, 13, 11, Math.PI * 0.55, Math.PI * 1.45, false);
+                    // Upper K+ pocket
+                    ctx.arc(dir * 19, -11, 11, Math.PI * 0.55, Math.PI * 1.45, false);
+                    ctx.lineTo(dir * topOpen, -45);
+                }
+
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Highlight binding pocket linings so students see ion specificity
+                ctx.lineWidth = 2.2;
+                if (isLeft) {
+                    // Orange-tinted Na+ affinity lining (brighter in E1 state)
+                    ctx.strokeStyle = `rgba(251, 146, 60, ${0.85 - progress * 0.45})`;
+                    [22, 2, -18].forEach((py, idx) => {
+                        let px = idx === 1 ? -23 : (idx === 0 ? -18 : -20);
+                        ctx.beginPath();
+                        ctx.arc(px, py, 9.5, Math.PI * 0.4, -Math.PI * 0.4, true);
+                        ctx.stroke();
+                    });
+
+                    // Cytosolic Aspartate (Asp) Phosphorylation Pocket on P-domain
+                    ctx.fillStyle = 'rgba(254, 240, 138, 0.25)';
+                    ctx.strokeStyle = '#fde047';
+                    ctx.lineWidth = 1.6;
+                    ctx.beginPath();
+                    ctx.arc(-44, 36, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    // Cyan-tinted K+ affinity lining (brighter in E2-P state)
+                    ctx.strokeStyle = `rgba(56, 189, 248, ${0.4 + progress * 0.55})`;
+                    [13, -11].forEach(py => {
+                        ctx.beginPath();
+                        ctx.arc(19, py, 11, Math.PI * 0.58, Math.PI * 1.42, false);
+                        ctx.stroke();
+                    });
+                }
+
+                // Specular 3D alpha-helix highlights on subunit body
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(dir * (outerTop - 12), -32);
+                ctx.quadraticCurveTo(dir * (outerTop - 6), 0, dir * (outerBot - 14), 30);
+                ctx.stroke();
+
+                ctx.restore();
+            };
+
+            drawSubunit(true);
+            drawSubunit(false);
+
+            ctx.restore();
+        }
+
+        // Draw Glossy 3D Ions (Na+ and K+) with Hydration Shell Glow
+        function drawIon(ion) {
+            const isNa = ion.type === 'Na';
+            const r = ion.r || (isNa ? 9.5 : 11);
+
+            ctx.save();
+            // Highlight active transport ions with a subtle hydration shell ring
+            if (ion.id) {
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, r + 4, 0, Math.PI * 2);
+                ctx.fillStyle = isNa ? 'rgba(249, 115, 22, 0.22)' : 'rgba(14, 165, 233, 0.22)';
+                ctx.fill();
+            }
+
+            // 3D Sphere Gradient
+            let grad = ctx.createRadialGradient(
+                ion.x - r * 0.35,
+                ion.y - r * 0.35,
+                r * 0.1,
+                ion.x,
+                ion.y,
+                r
+            );
+            if (isNa) {
+                grad.addColorStop(0, '#fed7aa');
+                grad.addColorStop(0.45, '#f97316');
+                grad.addColorStop(1, '#9a3412');
+            } else {
+                grad.addColorStop(0, '#bae6fd');
+                grad.addColorStop(0.45, '#0ea5e9');
+                grad.addColorStop(1, '#075985');
+            }
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(ion.x, ion.y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+
+            // Crisp Chemical Formula Label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${isNa ? '8.5px' : '9.5px'} Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(isNa ? 'Na⁺' : 'K⁺', ion.x, ion.y + 0.5);
+            ctx.restore();
+        }
+
+        // Draw Scientifically Styled ATP / ADP Molecule + Energy Burst
+        function drawATP(atp) {
+            ctx.save();
+            ctx.translate(atp.x, atp.y);
+
+            // Hydrolysis energy flash effect
+            if (atp.flash > 0) {
+                ctx.beginPath();
+                ctx.arc(10, -5, 28 * (1 - atp.flash * 0.5), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(250, 204, 21, ${atp.flash * 0.55})`;
+                ctx.fill();
+            }
+
+            // High-energy starburst aura for intact ATP
+            if (!atp.isAdp) {
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
+                ctx.beginPath();
+                const spikes = 10;
+                for (let i = 0; i < spikes * 2; i++) {
+                    let rad = i % 2 === 0 ? 24 : 16;
+                    let ang = (i * Math.PI) / spikes + simState.time * 2;
+                    let sx = Math.cos(ang) * rad;
+                    let sy = Math.sin(ang) * rad;
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Capsule badge representing Adenosine + Phosphate chain
+            let badgeGrad = ctx.createLinearGradient(-20, -12, 20, 12);
+            if (atp.isAdp) {
+                badgeGrad.addColorStop(0, '#fcd34d');
+                badgeGrad.addColorStop(1, '#d97706');
+            } else {
+                badgeGrad.addColorStop(0, '#fef08a');
+                badgeGrad.addColorStop(0.5, '#f59e0b');
+                badgeGrad.addColorStop(1, '#b45309');
+            }
+
+            ctx.fillStyle = badgeGrad;
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(-21, -11, 42, 22, 11);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#451a03';
+            ctx.font = 'bold 10.5px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(atp.isAdp ? 'ADP' : 'ATP', 0, 0.5);
+
+            ctx.restore();
+        }
+
+        // Draw Inorganic Phosphate (Pi) Group
+        function drawPi(pi) {
+            ctx.save();
+            if (pi.attached) {
+                // High-energy phosphoryl bond glow on Aspartate pocket
+                ctx.beginPath();
+                ctx.arc(pi.x, pi.y, 14, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.35)';
+                ctx.fill();
+            }
+
+            let pGrad = ctx.createRadialGradient(pi.x - 3, pi.y - 3, 1, pi.x, pi.y, 10);
+            pGrad.addColorStop(0, '#fef9c3');
+            pGrad.addColorStop(0.5, '#eab308');
+            pGrad.addColorStop(1, '#a16207');
+
+            ctx.fillStyle = pGrad;
+            ctx.strokeStyle = '#713f12';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(pi.x, pi.y, 9.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#422006';
+            ctx.font = 'bold 9.5px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Pᵢ', pi.x, pi.y + 0.5);
+            ctx.restore();
+        }
+
+        // Crisp Compartment & Concentration Gradient Labels on Canvas
         function drawLabels() {
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            ctx.fillRect(10, 10, 150, 25);
-            ctx.fillRect(10, height - 35, 150, 25);
+            ctx.save();
+
+            // Bottom-Left & Top-Bottom Compartment Badges
+            const drawBadge = (x, y, title, subtitle, isECF) => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+                ctx.strokeStyle = isECF ? 'rgba(14, 165, 233, 0.35)' : 'rgba(217, 119, 6, 0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(x, y, 225, 36, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 11.5px Inter, sans-serif';
+                ctx.fillText(title, x + 10, y + 15);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '500 10px Inter, sans-serif';
+                ctx.fillText(subtitle, x + 10, y + 29);
+            };
+
+            drawBadge(
+                14,
+                height - 96,
+                'Cytoplasm (Intracellular Fluid)',
+                'High [K⁺] • Low [Na⁺] • Resting −70 mV',
+                false
+            );
+
+            // Place ECF label cleanly at bottom-right or top-center-right
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+            ctx.strokeStyle = 'rgba(14, 165, 233, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(14, height - 50, 225, 36, 8);
+            ctx.fill();
+            ctx.stroke();
+
             ctx.textAlign = 'left';
-            ctx.textBaseline = 'alphabetic';
-            ctx.fillStyle = '#1e293b';
-            ctx.font = '14px font-bold Arial';
-            ctx.fillText('Extracellular Fluid', 20, 27);
-            ctx.fillText('Cytoplasm (Inside)', 20, height - 18);
+            ctx.fillStyle = '#0369a1';
+            ctx.font = 'bold 11.5px Inter, sans-serif';
+            ctx.fillText('Extracellular Fluid (Top Region)', 24, height - 35);
+            ctx.fillStyle = '#475569';
+            ctx.font = '500 10px Inter, sans-serif';
+            ctx.fillText('High [Na⁺] • Low [K⁺] • Positive (+)', 24, height - 21);
+
+            ctx.restore();
         }
 
         function advancePumpState(nextState, waitBtnId) {
             if (simState.autoMode) {
                 simState.pumpState = nextState;
             } else {
-                simState.pumpState = nextState - 0.5; // fractional wait state
+                simState.pumpState = nextState - 0.5; // Fractional wait state
                 updateButtons(waitBtnId);
             }
+            updateStepBadge(simState.pumpState);
         }
 
         function updateButtons(activeId) {
             ['btn-step1', 'btn-step2', 'btn-step3', 'btn-step4', 'btn-step5'].forEach(id => {
-                document.getElementById(id).disabled = true;
+                const btn = document.getElementById(id);
+                btn.disabled = true;
+                btn.classList.remove('step-active');
             });
-            if (activeId && !simState.autoMode) document.getElementById(activeId).disabled = false;
+            if (activeId && !simState.autoMode) {
+                const activeBtn = document.getElementById(activeId);
+                activeBtn.disabled = false;
+                activeBtn.classList.add('step-active');
+            }
         }
 
         function toggleAutoMode(isAuto) {
             simState.autoMode = isAuto;
             if (isAuto && currentModule === 'pump') {
                 updateButtons(null);
-                // Bump waiting states to active
                 if (simState.pumpState === 0) triggerPumpStep(1);
                 if (simState.pumpState === 1.5) triggerPumpStep(2);
                 if (simState.pumpState === 2.5) triggerPumpStep(3);
                 if (simState.pumpState === 3.5) triggerPumpStep(4);
                 if (simState.pumpState === 4.5) triggerPumpStep(5);
-            } else if (!isAuto && currentModule === 'pump') {
-                // If we uncheck it while active, it will naturally pause at the end of the current step
             }
         }
 
         function triggerPumpStep(stepNum) {
-            if(simState.pumpState === 0 && stepNum === 1) { simState.pumpState = 1; updateButtons(null); }
-            if(simState.pumpState === 1.5 && stepNum === 2) { simState.pumpState = 2; updateButtons(null); }
-            if(simState.pumpState === 2.5 && stepNum === 3) { simState.pumpState = 3; updateButtons(null); }
-            if(simState.pumpState === 3.5 && stepNum === 4) { simState.pumpState = 4; updateButtons(null); }
-            if(simState.pumpState === 4.5 && stepNum === 5) { simState.pumpState = 5; updateButtons(null); }
+            if (simState.pumpState === 0 && stepNum === 1)   { simState.pumpState = 1; updateButtons(null); }
+            if (simState.pumpState === 1.5 && stepNum === 2) { simState.pumpState = 2; updateButtons(null); }
+            if (simState.pumpState === 2.5 && stepNum === 3) { simState.pumpState = 3; updateButtons(null); }
+            if (simState.pumpState === 3.5 && stepNum === 4) { simState.pumpState = 4; updateButtons(null); }
+            if (simState.pumpState === 4.5 && stepNum === 5) { simState.pumpState = 5; updateButtons(null); }
+            updateStepBadge(simState.pumpState);
         }
 
         function updateAndRenderPump(dt) {
+            drawEnvironment();
             drawMembrane(cy, 0);
-            let speed = 90 * dt; // ion movement speed
 
-            // Background ions drift
+            let speed = 105 * dt;
+
+            // Ambient Brownian motion of background ions within their compartment
             simState.ions.forEach(ion => {
                 if (!ion.fixed && !ion.id) {
-                    ion.x += ion.vx; ion.y += ion.vy;
-                    if(ion.x < 0 || ion.x > width) ion.vx *= -1;
-                    if (ion.type === 'Na' && ion.y < cy) { if (ion.y < 0) ion.vy *= -1; if (ion.y > cy - 20) ion.vy *= -1; } 
-                    else if (ion.type === 'K' && ion.y > cy) { if (ion.y > height) ion.vy *= -1; if (ion.y < cy + 20) ion.vy *= -1; } 
-                    else { if (ion.y < 0 || ion.y > height) ion.vy *= -1; }
+                    ion.x += ion.vx;
+                    ion.y += ion.vy;
+                    if (ion.x < 16) { ion.x = 16; ion.vx *= -1; }
+                    if (ion.x > width - 16) { ion.x = width - 16; ion.vx *= -1; }
+
+                    // Keep extracellular ions in ECF and cytoplasmic ions in ICF
+                    if (ion.y < cy) {
+                        if (ion.y < 18) { ion.y = 18; ion.vy *= -1; }
+                        if (ion.y > cy - 38) { ion.y = cy - 38; ion.vy *= -1; }
+                    } else {
+                        if (ion.y > height - 18) { ion.y = height - 18; ion.vy *= -1; }
+                        if (ion.y < cy + 38) { ion.y = cy + 38; ion.vy *= -1; }
+                    }
                 }
             });
 
-            // State Machine
+            // Pump Cycle State Machine
             if (simState.pumpState === 1) {
                 let allBound = true;
                 simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
                     ion.fixed = true;
-                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed)) allBound = false;
+                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed * 1.15)) allBound = false;
                 });
                 if (allBound) advancePumpState(2, 'btn-step2');
             } 
             else if (simState.pumpState === 2) {
                 simState.atp.active = true;
-                if (moveTowards(simState.atp, cx - 40, cy + 20, speed)) {
+                if (moveTowards(simState.atp, cx - 44, cy + 44, speed * 1.15)) {
                     simState.waitTimer += dt;
-                    if (simState.waitTimer > 0.5) { // Split ATP
+                    if (simState.waitTimer > 0.45) {
                         simState.atp.isAdp = true;
+                        simState.atp.flash = 1.0;
                         simState.pi.active = true;
                         simState.pi.attached = true;
                         simState.waitTimer = 0;
@@ -407,18 +1147,26 @@
                 }
             }
             else if (simState.pumpState === 3) {
-                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; } // ADP drifts away
+                if (simState.atp.isAdp) {
+                    simState.atp.x -= speed * 0.55;
+                    simState.atp.y += speed * 0.45;
+                }
                 
-                simState.pumpAnimProgress += 2.5 * dt; // Animate to V inverted
+                // E1-P -> E2-P conformational shift
+                simState.pumpAnimProgress += 2.2 * dt;
                 if (simState.pumpAnimProgress >= 1) {
                     simState.pumpAnimProgress = 1;
                     let allOut = true;
                     simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
-                        if (!moveTowards(ion, ion.outX, ion.outY, speed)) allOut = false;
+                        if (!moveTowards(ion, ion.outX, ion.outY, speed * 1.15)) allOut = false;
                     });
                     if (allOut) {
                         simState.ions.filter(i => i.id && i.type === 'Na').forEach(ion => {
-                            ion.fixed = false; delete ion.id; ion.vx = (Math.random()-0.5)*2; ion.vy = -1 - Math.random()*2;
+                            ion.fixed = false;
+                            ion.region = 'ecf';
+                            delete ion.id;
+                            ion.vx = (Math.random() - 0.5) * 1.2;
+                            ion.vy = -0.6 - Math.random() * 0.8;
                             pumpStats.na++;
                         });
                         pumpStats.atp++;
@@ -428,141 +1176,270 @@
                 }
             }
             else if (simState.pumpState === 4) {
-                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; }
+                if (simState.atp.isAdp) {
+                    simState.atp.x -= speed * 0.5;
+                    simState.atp.y += speed * 0.4;
+                }
                 let allBound = true;
                 simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
                     ion.fixed = true;
-                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed)) allBound = false;
+                    if (!moveTowards(ion, ion.targetX, ion.targetY, speed * 1.15)) allBound = false;
                 });
                 if (allBound) advancePumpState(5, 'btn-step5');
             }
             else if (simState.pumpState === 5) {
-                if (simState.atp.isAdp) { simState.atp.x -= speed*0.5; simState.atp.y += speed*0.5; }
+                if (simState.atp.isAdp) {
+                    simState.atp.x -= speed * 0.5;
+                    simState.atp.y += speed * 0.4;
+                }
                 
+                // Dephosphorylation: Pi dissociates from Aspartate pocket
                 simState.pi.attached = false;
-                simState.pi.x -= speed*0.5; simState.pi.y += speed*0.5; // Pi floats away
+                simState.pi.x -= speed * 0.55;
+                simState.pi.y += speed * 0.55;
 
-                simState.pumpAnimProgress -= 2.5 * dt; // Animate to V normal
+                // E2 -> E1 conformational shift
+                simState.pumpAnimProgress -= 2.2 * dt;
                 if (simState.pumpAnimProgress <= 0) {
                     simState.pumpAnimProgress = 0;
                     let allIn = true;
                     simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
-                        if (!moveTowards(ion, ion.inX, ion.inY, speed)) allIn = false;
+                        if (!moveTowards(ion, ion.inX, ion.inY, speed * 1.15)) allIn = false;
                     });
                     if (allIn) {
                         simState.ions.filter(i => i.id && i.type === 'K').forEach(ion => {
-                            ion.fixed = false; delete ion.id; ion.vx = (Math.random()-0.5)*2; ion.vy = 1 + Math.random()*2;
+                            ion.fixed = false;
+                            ion.region = 'icf';
+                            delete ion.id;
+                            ion.vx = (Math.random() - 0.5) * 1.2;
+                            ion.vy = 0.6 + Math.random() * 0.8;
                             pumpStats.k++;
                         });
                         updateStatsUI();
                         setupNextCycleIons();
                         
                         if (simState.autoMode) {
-                            simState.pumpState = 1; // loop
+                            simState.pumpState = 1;
                         } else {
-                            simState.pumpState = 0; // stop
+                            simState.pumpState = 0;
                             updateButtons('btn-step1');
                         }
+                        updateStepBadge(simState.pumpState);
                     }
                 }
             } else if (simState.pumpState % 1 !== 0) {
-                // In a wait state, keep floating ADP/Pi moving if they exist
-                if (simState.atp.isAdp) { simState.atp.x -= speed*0.2; simState.atp.y += speed*0.2; }
+                if (simState.atp.isAdp) {
+                    simState.atp.x -= speed * 0.25;
+                    simState.atp.y += speed * 0.25;
+                }
             }
 
+            if (simState.atp.flash > 0) {
+                simState.atp.flash = Math.max(0, simState.atp.flash - dt * 2.5);
+            }
+
+            // Render Transmembrane Pump Protein
             drawProteinPump(simState.pumpAnimProgress);
 
-            // Draw Ions
-            simState.ions.forEach(ion => {
-                ctx.fillStyle = ion.type === 'Na' ? COLORS.na : COLORS.k;
-                ctx.beginPath(); ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = 'white'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', ion.x, ion.y);
-            });
+            // Render Ions
+            simState.ions.forEach(ion => drawIon(ion));
 
-            // Draw ATP / ADP
-            if (simState.atp.active) {
-                ctx.fillStyle = COLORS.atp; ctx.save(); ctx.translate(simState.atp.x, simState.atp.y);
-                ctx.rotate(Math.PI/4); ctx.fillRect(-10, -10, 20, 20); ctx.restore();
-                ctx.fillStyle = 'black'; ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(simState.atp.isAdp ? 'ADP' : 'ATP', simState.atp.x, simState.atp.y);
-            }
-
-            // Draw attached or floating Pi
+            // Render Attached or Dissociating Inorganic Phosphate (Pi)
             if (simState.pi.active) {
                 if (simState.pi.attached) {
-                    // Lock position relative to pump
-                    simState.pi.x = cx - 50;
-                    simState.pi.y = cy + 20;
+                    simState.pi.x = cx - 44;
+                    simState.pi.y = cy + 36;
                 }
-                ctx.fillStyle = COLORS.atp;
-                ctx.beginPath(); ctx.arc(simState.pi.x, simState.pi.y, 10, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = 'black'; ctx.font = '11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', simState.pi.x, simState.pi.y);
+                drawPi(simState.pi);
+            }
+
+            // Render ATP / ADP Molecule
+            if (simState.atp.active) {
+                drawATP(simState.atp);
             }
 
             drawLabels();
         }
 
         function updateAndRenderEndo(dt) {
-            let speed = 0.5 * dt;
+            drawEnvironment();
+
+            let speed = 0.38 * dt;
             if (simState.isAnimating) {
                 simState.animProgress += speed;
-                if (simState.animProgress > 1) { simState.animProgress = 1; simState.isAnimating = false; }
+                if (simState.animProgress > 1) {
+                    simState.animProgress = 1;
+                    simState.isAnimating = false;
+                    updateStepBadge(0);
+                }
             }
+
             let p = simState.animProgress;
             let dipDepth = 0, gap = 0, breakOpen = false;
 
-            if (p < 0.2) simState.particle.y = (cy - 120) + (p/0.2)*80;
-            else if (p < 0.7) { dipDepth = ((p - 0.2) / 0.5) * 60; simState.particle.y = (cy - 40) + dipDepth; } 
-            else if (p < 0.9) { let pinch = (p - 0.7) / 0.2; dipDepth = 60 - pinch * 60; gap = pinch * 10; breakOpen = true; simState.particle.y = (cy + 20) + pinch * 30; } 
-            else { dipDepth = 0; breakOpen = false; simState.particle.y = cy + 50 + ((p - 0.9) / 0.1) * 20; }
-
-            ctx.fillStyle = COLORS.particle;
-            ctx.beginPath(); ctx.roundRect(simState.particle.x - 15, simState.particle.y - 15, 30, 30, 5); ctx.fill();
-
-            if (p >= 0.7) {
-                let pinchP = Math.min(1, Math.max(0, (p - 0.7) / 0.2));
-                let vesicleY = p >= 0.9 ? simState.particle.y : (cy + 20) + pinchP * 30;
-                ctx.strokeStyle = COLORS.membrane; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(cx, vesicleY, 30, 0, Math.PI*2); ctx.stroke();
-                ctx.fillStyle = COLORS.head;
-                for(let a=0; a<Math.PI*2; a+=0.5) { ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(24), vesicleY + Math.sin(a)*(24), 4, 0, Math.PI*2); ctx.fill(); }
-                for(let a=0; a<Math.PI*2; a+=0.4) { ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(36), vesicleY + Math.sin(a)*(36), 4, 0, Math.PI*2); ctx.fill(); }
+            if (p < 0.22) {
+                simState.particle.y = (cy - 125) + (p / 0.22) * 85;
+            } else if (p < 0.72) {
+                let bendP = (p - 0.22) / 0.5;
+                dipDepth = bendP * 78;
+                simState.particle.y = (cy - 40) + dipDepth * 0.85;
+            } else if (p < 0.9) {
+                let pinch = (p - 0.72) / 0.18;
+                dipDepth = 78 * (1 - pinch);
+                gap = (1 - pinch) * 18;
+                breakOpen = true;
+                simState.particle.y = (cy + 26) + pinch * 58;
+            } else {
+                dipDepth = 0;
+                breakOpen = false;
+                simState.particle.y = cy + 84 + ((p - 0.9) / 0.1) * 32;
             }
 
-            drawMembrane(cy, dipDepth, 80, gap, breakOpen);
+            // Ambient extracellular fluid solutes
+            if (simState.ambientDots) {
+                ctx.fillStyle = 'rgba(14, 165, 233, 0.35)';
+                simState.ambientDots.forEach(d => {
+                    d.x += d.vx;
+                    d.y += d.vy;
+                    if (d.x < 10 || d.x > width - 10) d.vx *= -1;
+                    if (d.y < 15 || d.y > cy - 40) d.vy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            // If vesicle has pinched off (p >= 0.72), draw trapped ECF lumen + phospholipid bilayer vesicle
+            if (p >= 0.72) {
+                let pinchP = Math.min(1, Math.max(0, (p - 0.72) / 0.18));
+                let vesicleY = p >= 0.9 ? simState.particle.y : (cy + 26) + pinchP * 58;
+
+                // Trapped blue Extracellular Fluid inside the endocytic vesicle lumen
+                ctx.fillStyle = '#e0f2fe';
+                ctx.beginPath();
+                ctx.arc(cx, vesicleY, 28, 0, Math.PI * 2);
+                ctx.fill();
+
+                drawBilayerVesicle(cx, vesicleY, 36, 0);
+
+                // Subtle Clathrin triskelion coat cues around newly formed vesicle
+                ctx.save();
+                ctx.strokeStyle = `rgba(225, 29, 72, ${0.65 - Math.max(0, (p - 0.85) * 3)})`;
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(cx, vesicleY, 53, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Render Plasma Membrane Bilayer
+            drawMembrane(cy, dipDepth, 130, gap, breakOpen);
+
+            // Render Macromolecule Cargo (3D shaded biological ligand)
+            ctx.save();
+            ctx.translate(simState.particle.x, simState.particle.y);
+            let cargoGrad = ctx.createRadialGradient(-6, -6, 2, 0, 0, 22);
+            cargoGrad.addColorStop(0, '#6ee7b7');
+            cargoGrad.addColorStop(0.55, '#10b981');
+            cargoGrad.addColorStop(1, '#065f46');
+
+            ctx.fillStyle = cargoGrad;
+            ctx.strokeStyle = '#064e3b';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(-17, -17, 34, 34, 9);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9.5px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('CARGO', 0, 0.5);
+            ctx.restore();
+
             drawLabels();
         }
 
         function updateAndRenderExo(dt) {
-            let speed = 0.4 * dt;
+            drawEnvironment();
+
+            let speed = 0.36 * dt;
             if (simState.isAnimating) {
                 simState.animProgress += speed;
-                if (simState.animProgress > 1) { simState.animProgress = 1; simState.isAnimating = false; }
-            }
-            let p = simState.animProgress;
-            let vesicleY = cy + 120, dipDepth = 0, breakOpen = false, gap = 0, vR = 35;
-
-            if (p < 0.3) vesicleY = (cy + 120) - (p/0.3)*80;
-            else if (p < 0.6) { vesicleY = cy + 40; let openP = (p - 0.3)/0.3; dipDepth = openP * 40; breakOpen = true; gap = openP * 30; vR = 35 + openP*20; } 
-            else if (p < 0.9) { vesicleY = cy + 40; let flatP = (p - 0.6)/0.3; dipDepth = 40 - flatP * 40; gap = 30 + flatP * 50; breakOpen = true; if (flatP > 0.8) gap = 0; }
-
-            if (p < 0.9) {
-                ctx.strokeStyle = COLORS.membrane; ctx.lineWidth = 12;
-                if (p < 0.3) { ctx.beginPath(); ctx.arc(cx, vesicleY, vR, 0, Math.PI*2); ctx.stroke(); } 
-                else { ctx.beginPath(); ctx.arc(cx, vesicleY, vR, Math.PI + 0.5, Math.PI*2 - 0.5, true); ctx.stroke(); }
-                ctx.fillStyle = COLORS.head;
-                for(let a=0; a<Math.PI*2; a+=0.4) {
-                    if (p >= 0.3 && a > Math.PI && a < Math.PI*2) continue;
-                    ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(vR-6), vesicleY + Math.sin(a)*(vR-6), 4, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(cx + Math.cos(a)*(vR+6), vesicleY + Math.sin(a)*(vR+6), 4, 0, Math.PI*2); ctx.fill();
+                if (simState.animProgress > 1) {
+                    simState.animProgress = 1;
+                    simState.isAnimating = false;
+                    updateStepBadge(0);
                 }
             }
 
-            drawMembrane(cy, -dipDepth, gap*2, gap, breakOpen);
+            let p = simState.animProgress;
+            let vesicleY = cy + 125, dipDepth = 0, breakOpen = false, gap = 0, vR = 38, openAngle = 0;
 
+            if (p < 0.32) {
+                // Vesicle trafficking & docking to plasma membrane
+                vesicleY = (cy + 125) - (p / 0.32) * 76;
+            } else if (p < 0.65) {
+                // Bilayer fusion & pore expansion
+                let openP = (p - 0.32) / 0.33;
+                vesicleY = cy + 49 - openP * 14;
+                dipDepth = openP * 32;
+                breakOpen = true;
+                gap = 12 + openP * 26;
+                vR = 38 + openP * 8;
+                openAngle = 0.35 + openP * 0.75;
+            } else if (p < 0.92) {
+                // Vesicle membrane flattens seamlessly into plasma membrane
+                let flatP = (p - 0.65) / 0.27;
+                vesicleY = cy + 35;
+                dipDepth = 32 * (1 - flatP);
+                gap = (1 - flatP) * 38;
+                breakOpen = flatP < 0.85;
+                openAngle = 1.1 + flatP * 1.2;
+            }
+
+            // Draw Secretory Vesicle Bilayer prior to complete integration
+            if (p < 0.85) {
+                drawBilayerVesicle(cx, vesicleY, vR, openAngle);
+            }
+
+            // Draw Plasma Membrane Bilayer
+            drawMembrane(cy, dipDepth, 125, gap, breakOpen);
+
+            // Render Secretory Proteins / Neurotransmitters
             simState.exoParticles.forEach(particle => {
-                if (p < 0.3) { particle.globalX = cx + particle.xOffset; particle.globalY = vesicleY + particle.yOffset; } 
-                else if (p >= 0.3 && !particle.released) { particle.released = true; }
-                if (particle.released) { particle.globalX += particle.vx; particle.globalY += particle.vy; }
-                ctx.fillStyle = COLORS.exoParticle; ctx.beginPath(); ctx.arc(particle.globalX, particle.globalY, 6, 0, Math.PI*2); ctx.fill();
+                if (p < 0.35) {
+                    particle.globalX = cx + particle.xOffset;
+                    particle.globalY = vesicleY + particle.yOffset;
+                } else if (p >= 0.35 && !particle.released) {
+                    particle.released = true;
+                }
+                if (particle.released) {
+                    particle.globalX += particle.vx;
+                    particle.globalY += particle.vy;
+                    // Gentle dispersal in extracellular space
+                    if (particle.globalY < 25) particle.vy *= -0.6;
+                    if (particle.globalX < 20 || particle.globalX > width - 20) particle.vx *= -1;
+                }
+
+                let secGrad = ctx.createRadialGradient(
+                    particle.globalX - 2,
+                    particle.globalY - 2,
+                    1,
+                    particle.globalX,
+                    particle.globalY,
+                    6.5
+                );
+                secGrad.addColorStop(0, '#f5d0fe');
+                secGrad.addColorStop(0.5, '#d946ef');
+                secGrad.addColorStop(1, '#86198f');
+
+                ctx.fillStyle = secGrad;
+                ctx.beginPath();
+                ctx.arc(particle.globalX, particle.globalY, 6.5, 0, Math.PI * 2);
+                ctx.fill();
             });
             
             drawLabels();
@@ -570,10 +1447,11 @@
 
         function render(time) {
             let dt = (time - lastTime) / 1000;
-            if (dt > 0.1) dt = 0.1;
+            if (dt > 0.1 || dt < 0) dt = 0.016;
             lastTime = time;
+            simState.time = time / 1000;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, width, height);
             
             if (currentModule === 'pump') updateAndRenderPump(dt);
             else if (currentModule === 'endo') updateAndRenderEndo(dt);
@@ -585,10 +1463,10 @@
         function setModule(mod) {
             currentModule = mod;
             document.querySelectorAll('nav button').forEach(btn => {
-                btn.classList.remove('ring-white'); btn.classList.replace('bg-blue-700', 'bg-blue-500');
+                btn.className = 'btn px-4 py-1.5 bg-transparent hover:bg-slate-700/60 text-slate-300 rounded-lg font-semibold text-sm transition-all ring-1 ring-transparent';
             });
             const activeTab = document.getElementById(`tab-${mod}`);
-            activeTab.classList.replace('bg-blue-500', 'bg-blue-700'); activeTab.classList.add('ring-white');
+            activeTab.className = 'btn px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm transition-all shadow-sm ring-1 ring-white/20';
 
             if (mod === 'pump') document.getElementById('pump-scoreboard').classList.remove('hidden');
             else document.getElementById('pump-scoreboard').classList.add('hidden');
@@ -604,7 +1482,9 @@
             
             const infoEl = document.getElementById('info-text');
             infoEl.innerHTML = content.text;
-            infoEl.classList.remove('fade-in'); void infoEl.offsetWidth; infoEl.classList.add('fade-in');
+            infoEl.classList.remove('fade-in');
+            void infoEl.offsetWidth;
+            infoEl.classList.add('fade-in');
 
             initModuleState();
             
@@ -615,7 +1495,7 @@
 
         function triggerAction(action) {
             if (action === 'reset') {
-                if(currentModule === 'pump' && document.getElementById('auto-toggle')) {
+                if (currentModule === 'pump' && document.getElementById('auto-toggle')) {
                     document.getElementById('auto-toggle').checked = false;
                 }
                 initModuleState();
@@ -623,9 +1503,13 @@
                 else if (currentModule === 'endo') document.getElementById('btn-engulf').disabled = false;
                 else if (currentModule === 'exo') document.getElementById('btn-release').disabled = false;
             } else if (action === 'engulf' && !simState.isAnimating) {
-                simState.isAnimating = true; document.getElementById('btn-engulf').disabled = true;
+                simState.isAnimating = true;
+                document.getElementById('btn-engulf').disabled = true;
+                updateStepBadge(0);
             } else if (action === 'release' && !simState.isAnimating) {
-                simState.isAnimating = true; document.getElementById('btn-release').disabled = true;
+                simState.isAnimating = true;
+                document.getElementById('btn-release').disabled = true;
+                updateStepBadge(0);
             }
         }
 
